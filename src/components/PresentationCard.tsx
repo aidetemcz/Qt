@@ -15,20 +15,28 @@ export default function PresentationCard({
   presentation: Presentation;
 }) {
   return (
-    <div className="flex flex-col justify-between gap-4 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-      <div>
-        <h2 className="text-lg font-semibold">{presentation.title}</h2>
-        <p className="mt-1 text-sm text-neutral-500">
-          {presentation.slideCount} slides · Last edited{" "}
-          {formatDate(presentation.lastEdited)}
-        </p>
+    <div className="group overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+      <div
+        className={`flex aspect-video items-center justify-center bg-gradient-to-br ${presentation.thumbnail}`}
+      >
+        <span className="text-4xl font-extrabold text-white/80">
+          {presentation.title.charAt(0)}
+        </span>
       </div>
-      <div>
+      <div className="flex items-center justify-between gap-3 p-4">
+        <div className="min-w-0">
+          <h2 className="truncate text-sm font-semibold">
+            {presentation.title}
+          </h2>
+          <p className="mt-0.5 text-xs text-neutral-500">
+            {presentation.slideCount} slides · {formatDate(presentation.lastEdited)}
+          </p>
+        </div>
         <button
           type="button"
           disabled
           title="Editing is coming soon"
-          className="cursor-not-allowed rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-400"
+          className="shrink-0 cursor-not-allowed rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-400"
         >
           Edit
         </button>
