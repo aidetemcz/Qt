@@ -1,6 +1,8 @@
+import NewPresentationButton from "@/components/NewPresentationButton";
 import PresentationCard from "@/components/PresentationCard";
 import Sidebar from "@/components/Sidebar";
-import { mockPresentations } from "@/lib/mock-data";
+import type { Presentation } from "@/lib/presentations";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Projects · Q&Q",
@@ -8,7 +10,14 @@ export const metadata = {
 
 const quickCreate = ["Presentation", "Quiz", "Live poll", "Word cloud"];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: presentations, error } = await supabase
+    .from("presentations")
+    .select("id, title, created_at, updated_at")
+    .order("updated_at", { ascending: false })
+    .returns<Presentation[]>();
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <Sidebar />
@@ -46,24 +55,27 @@ export default function DashboardPage() {
             <h2 className="text-xl font-bold tracking-tight">
               Recent projects
             </h2>
-            <button
-              type="button"
-              disabled
-              title="Creating presentations is coming soon"
-              className="cursor-not-allowed rounded-lg bg-brand/50 px-5 py-2.5 text-sm font-medium text-white"
-            >
-              New presentation
-            </button>
+            <NewPresentationButton />
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {mockPresentations.map((presentation) => (
-              <PresentationCard
-                key={presentation.id}
-                presentation={presentation}
-              />
-            ))}
-          </div>
+          {error ? (
+            <p className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              Failed to load presentations: {error.message}
+            </p>
+          ) : presentations && presentations.length > 0 ? (
+            <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {presentations.map((presentation) => (
+                <PresentationCard
+                  key={presentation.id}
+                  presentation={presentation}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-neutral-500">
+              No presentations yet. Create your first one!
+            </p>
+          )}
         </div>
       </main>
     </div>
