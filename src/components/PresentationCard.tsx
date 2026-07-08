@@ -1,4 +1,24 @@
-import type { Presentation } from "@/lib/mock-data";
+"use client";
+
+import { useState, useTransition } from "react";
+import { deletePresentation, renamePresentation } from "@/app/dashboard/actions";
+import type { Presentation } from "@/lib/presentations";
+
+/** Tailwind gradient classes for the card thumbnail placeholder */
+const thumbnails = [
+  "from-brand to-accent",
+  "from-accent to-accent-dark",
+  "from-brand-dark to-brand",
+  "from-accent-dark to-brand",
+];
+
+function thumbnailFor(id: string): string {
+  let hash = 0;
+  for (const char of id) {
+    hash = (hash + char.charCodeAt(0)) % thumbnails.length;
+  }
+  return thumbnails[hash];
+}
 
 function formatDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString("en-US", {
@@ -14,32 +34,85 @@ export default function PresentationCard({
 }: {
   presentation: Presentation;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function submitTitle(value: string) {
+    setIsEditing(false);
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === presentation.title) {
+      return;
+    }
+    startTransition(() => renamePresentation(presentation.id, trimmed));
+  }
+
+  function handleDelete() {
+    if (confirm(`Delete "${presentation.title}"?`)) {
+      startTransition(() => deletePresentation(presentation.id));
+    }
+  }
+
   return (
-    <div className="group overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+    <div
+      className={`group overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md ${isPending ? "opacity-50" : ""}`}
+    >
       <div
-        className={`flex aspect-video items-center justify-center bg-gradient-to-br ${presentation.thumbnail}`}
+        className={`flex aspect-video items-center justify-center bg-gradient-to-br ${thumbnailFor(presentation.id)}`}
       >
         <span className="text-4xl font-extrabold text-white/80">
           {presentation.title.charAt(0)}
         </span>
       </div>
       <div className="flex items-center justify-between gap-3 p-4">
-        <div className="min-w-0">
-          <h2 className="truncate text-sm font-semibold">
-            {presentation.title}
-          </h2>
+        <div className="min-w-0 flex-1">
+          {isEditing ? (
+            <input
+              type="text"
+              autoFocus
+              defaultValue={presentation.title}
+              onBlur={(e) => submitTitle(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur();
+                } else if (e.key === "Escape") {
+                  e.currentTarget.value = presentation.title;
+                  e.currentTarget.blur();
+                }
+              }}
+              className="w-full rounded border border-brand/50 px-1.5 py-0.5 text-sm font-semibold outline-none focus:border-brand"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              title="Rename"
+              className="block max-w-full truncate text-left text-sm font-semibold hover:text-brand"
+            >
+              {presentation.title}
+            </button>
+          )}
           <p className="mt-0.5 text-xs text-neutral-500">
-            {presentation.slideCount} slides · {formatDate(presentation.lastEdited)}
+            Edited {formatDate(presentation.updated_at)}
           </p>
         </div>
-        <button
-          type="button"
-          disabled
-          title="Editing is coming soon"
-          className="shrink-0 cursor-not-allowed rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-400"
-        >
-          Edit
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            disabled
+            title="Editing is coming soon"
+            className="cursor-not-allowed rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-400"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isPending}
+            className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-brand hover:text-brand disabled:opacity-50"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );
