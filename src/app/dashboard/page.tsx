@@ -14,9 +14,9 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: presentations, error } = await supabase
     .from("presentations")
-    .select("id, title, created_at, updated_at")
+    .select("id, title, created_at, updated_at, slides(count)")
     .order("updated_at", { ascending: false })
-    .returns<Presentation[]>();
+    .returns<(Presentation & { slides: { count: number }[] })[]>();
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -64,10 +64,11 @@ export default async function DashboardPage() {
             </p>
           ) : presentations && presentations.length > 0 ? (
             <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {presentations.map((presentation) => (
+              {presentations.map(({ slides, ...presentation }) => (
                 <PresentationCard
                   key={presentation.id}
                   presentation={presentation}
+                  slideCount={slides[0]?.count ?? 0}
                 />
               ))}
             </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { deletePresentation, renamePresentation } from "@/app/dashboard/actions";
 import type { Presentation } from "@/lib/presentations";
@@ -31,8 +32,10 @@ function formatDate(isoDate: string): string {
 
 export default function PresentationCard({
   presentation,
+  slideCount,
 }: {
   presentation: Presentation;
+  slideCount: number;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -92,18 +95,17 @@ export default function PresentationCard({
             </button>
           )}
           <p className="mt-0.5 text-xs text-neutral-500">
-            Edited {formatDate(presentation.updated_at)}
+            {slideCount} {slideCount === 1 ? "slide" : "slides"} · Edited{" "}
+            {formatDate(presentation.updated_at)}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            disabled
-            title="Editing is coming soon"
-            className="cursor-not-allowed rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-400"
+          <Link
+            href={`/editor/${presentation.id}`}
+            className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-brand hover:text-brand"
           >
             Edit
-          </button>
+          </Link>
           <button
             type="button"
             onClick={handleDelete}
