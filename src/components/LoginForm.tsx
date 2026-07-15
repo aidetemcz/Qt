@@ -41,7 +41,7 @@ export default function LoginForm({ urlError }: { urlError?: string }) {
       options: {
         data: { name: name.trim() },
         shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
       },
     });
     if (authError) {
