@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
-import type { Session } from "@/lib/presentations";
+import Presenter from "@/components/present/Presenter";
+import type { Presentation, Session, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Prezentace · Q&Q",
 };
 
-// Minimal placeholder — the presentation canvas is the next step.
 export default async function PresentPage({
   params,
 }: {
@@ -25,19 +25,25 @@ export default async function PresentPage({
     notFound();
   }
 
+  const [presentationResult, slidesResult] = await Promise.all([
+    supabase
+      .from("presentations")
+      .select("id, title, created_at, updated_at")
+      .eq("id", session.presentation_id)
+      .maybeSingle<Presentation>(),
+    supabase
+      .from("slides")
+      .select("id, presentation_id, position, type, config")
+      .eq("presentation_id", session.presentation_id)
+      .order("position", { ascending: true })
+      .returns<Slide[]>(),
+  ]);
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-br from-brand/10 via-white to-accent/10 px-4 text-center">
-      <div>
-        <p className="text-sm font-medium uppercase tracking-wide text-neutral-500">
-          Připojovací kód
-        </p>
-        <p className="mt-1 font-mono text-6xl font-bold tracking-[0.3em] text-brand">
-          {session.code}
-        </p>
-      </div>
-      <p className="text-sm text-neutral-500">
-        Plátno prezentace připravujeme — zatím jen vytvořená session.
-      </p>
-    </div>
+    <Presenter
+      session={session}
+      title={presentationResult.data?.title ?? ""}
+      slides={slidesResult.data ?? []}
+    />
   );
 }
