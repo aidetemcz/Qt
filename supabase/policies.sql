@@ -93,3 +93,55 @@ create policy "slides_delete_own"
         and p.user_id = auth.uid()
     )
   );
+
+-- 4) Sessions: anyone (incl. anonymous audience) may read; only the owner of
+-- the parent presentation may create or modify them.
+alter table public.sessions enable row level security;
+
+drop policy if exists "sessions_select_all" on public.sessions;
+create policy "sessions_select_all"
+  on public.sessions for select
+  using (true);
+
+drop policy if exists "sessions_insert_own" on public.sessions;
+create policy "sessions_insert_own"
+  on public.sessions for insert
+  to authenticated
+  with check (
+    exists (
+      select 1 from public.presentations p
+      where p.id = sessions.presentation_id
+        and p.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "sessions_update_own" on public.sessions;
+create policy "sessions_update_own"
+  on public.sessions for update
+  to authenticated
+  using (
+    exists (
+      select 1 from public.presentations p
+      where p.id = sessions.presentation_id
+        and p.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.presentations p
+      where p.id = sessions.presentation_id
+        and p.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "sessions_delete_own" on public.sessions;
+create policy "sessions_delete_own"
+  on public.sessions for delete
+  to authenticated
+  using (
+    exists (
+      select 1 from public.presentations p
+      where p.id = sessions.presentation_id
+        and p.user_id = auth.uid()
+    )
+  );

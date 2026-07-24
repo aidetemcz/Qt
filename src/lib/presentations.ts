@@ -17,3 +17,12 @@ export interface Slide {
   type: string;
   config: SlideConfig;
 }
+
+export interface Session {
+  id: string;
+  presentation_id: string;
+  code: string;
+  current_position: number;
+  is_active: boolean;
+  created_at: string;
+}

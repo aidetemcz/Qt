@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { deletePresentation, renamePresentation } from "@/app/dashboard/actions";
+import {
+  deletePresentation,
+  renamePresentation,
+  startPresentation,
+} from "@/app/dashboard/actions";
 import type { Presentation } from "@/lib/presentations";
 
 /** Tailwind gradient classes for the card thumbnail placeholder */
@@ -55,6 +59,10 @@ export default function PresentationCard({
     }
   }
 
+  function handlePresent() {
+    startTransition(() => startPresentation(presentation.id));
+  }
+
   return (
     <div
       className={`group overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md ${isPending ? "opacity-50" : ""}`}
@@ -100,6 +108,14 @@ export default function PresentationCard({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={handlePresent}
+            disabled={isPending}
+            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+          >
+            Prezentovat
+          </button>
           <Link
             href={`/editor/${presentation.id}`}
             className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-brand hover:text-brand"
