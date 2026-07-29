@@ -37,14 +37,18 @@ export default function HomePage() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled
-              title="Coming soon"
-              className="cursor-not-allowed rounded-lg px-3 py-2 text-sm font-medium text-neutral-500"
+            <Link
+              href="/join"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
+            >
+              Join a room
+            </Link>
+            <Link
+              href="/login"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
             >
               Log in
-            </button>
+            </Link>
             <Link
               href="/dashboard"
               className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
