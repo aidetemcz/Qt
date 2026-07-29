@@ -72,10 +72,10 @@ export default function PresentationCard({
 
   return (
     <div
-      className={`group overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md ${isPending ? "opacity-50" : ""}`}
+      className={`group rounded-xl border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md ${isPending ? "opacity-50" : ""}`}
     >
       <div
-        className={`flex aspect-video items-center justify-center bg-gradient-to-br ${thumbnailFor(presentation.id)}`}
+        className={`flex aspect-video items-center justify-center rounded-t-xl bg-gradient-to-br ${thumbnailFor(presentation.id)}`}
       >
         <span className="text-4xl font-extrabold text-white/80">
           {presentation.title.charAt(0)}
@@ -127,7 +127,7 @@ export default function PresentationCard({
             <span className="text-lg leading-none">⋯</span>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full z-10 pt-1">
+            <div className="absolute right-0 top-full z-20 pt-1">
               <div
                 role="menu"
                 className="w-40 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg"
