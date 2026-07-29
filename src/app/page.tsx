@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 const categories = [
   "Presentation",
@@ -9,7 +10,12 @@ const categories = [
   "Q&A session",
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur">
@@ -43,12 +49,14 @@ export default function HomePage() {
             >
               Join a room
             </Link>
-            <Link
-              href="/login"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
-            >
-              Log in
-            </Link>
+            {!user && (
+              <Link
+                href="/login"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
+              >
+                Log in
+              </Link>
+            )}
             <Link
               href="/dashboard"
               className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
