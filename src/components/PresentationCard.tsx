@@ -127,7 +127,7 @@ export default function PresentationCard({
             <span className="text-lg leading-none">⋯</span>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full z-20 pt-1">
+            <div className="absolute right-0 bottom-full z-20 pb-1">
               <div
                 role="menu"
                 className="w-40 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg"
