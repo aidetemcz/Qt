@@ -4,7 +4,7 @@ import type { Presentation, Session, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Prezentace · Q&Q",
+  title: "Prezentace · Qt",
 };
 
 export default async function PresentPage({

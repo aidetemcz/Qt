@@ -6,7 +6,7 @@ import type { Presentation } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Projects · Q&Q",
+  title: "Projects · Qt",
 };
 
 const quickCreate = ["Presentation", "Quiz", "Live poll", "Word cloud"];

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
+import { renamePresentation } from "@/app/dashboard/actions";
 import type { Presentation, Slide, SlideConfig } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
 
@@ -33,11 +34,33 @@ export default function Editor({
   );
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [title, setTitle] = useState(presentation.title);
+  const savedTitle = useRef(presentation.title);
   const saveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
   );
 
   const selected = slides.find((slide) => slide.id === selectedId) ?? null;
+
+  async function commitTitle() {
+    const trimmed = title.trim();
+    if (!trimmed) {
+      setTitle(savedTitle.current);
+      return;
+    }
+    if (trimmed === savedTitle.current) {
+      return;
+    }
+    setSaveState("saving");
+    try {
+      await renamePresentation(presentation.id, trimmed);
+      savedTitle.current = trimmed;
+      setTitle(trimmed);
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
+  }
 
   function updateConfig(id: string, config: SlideConfig) {
     setSlides((prev) =>
@@ -136,9 +159,23 @@ export default function Editor({
           >
             ← Dashboard
           </Link>
-          <h1 className="truncate text-sm font-semibold">
-            {presentation.title}
-          </h1>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={commitTitle}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.currentTarget.blur();
+              } else if (e.key === "Escape") {
+                setTitle(savedTitle.current);
+                e.currentTarget.blur();
+              }
+            }}
+            aria-label="Název prezentace"
+            placeholder="Název prezentace"
+            className="min-w-0 flex-1 truncate rounded border border-transparent px-1.5 py-0.5 text-sm font-semibold outline-none hover:border-neutral-200 focus:border-brand"
+          />
         </div>
         <span
           className={`shrink-0 text-xs ${saveState === "error" ? "font-medium text-red-600" : "text-neutral-400"}`}

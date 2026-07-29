@@ -1,4 +1,4 @@
--- Row Level Security for Q&Q
+-- Row Level Security for Qt
 --
 -- Run this in the Supabase SQL editor. It is idempotent (safe to re-run):
 -- existing policies are dropped and recreated.

@@ -4,7 +4,7 @@ import type { Session, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Q&Q",
+  title: "Qt",
 };
 
 export default async function PlayPage({

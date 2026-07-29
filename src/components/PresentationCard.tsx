@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   deletePresentation,
@@ -41,7 +41,9 @@ export default function PresentationCard({
   presentation: Presentation;
   slideCount: number;
 }) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function submitTitle(value: string) {
@@ -54,14 +56,19 @@ export default function PresentationCard({
   }
 
   function handleDelete() {
-    if (confirm(`Delete "${presentation.title}"?`)) {
+    setMenuOpen(false);
+    if (confirm(`Smazat „${presentation.title}"?`)) {
       startTransition(() => deletePresentation(presentation.id));
     }
   }
 
   function handlePresent() {
+    setMenuOpen(false);
     startTransition(() => startPresentation(presentation.id));
   }
+
+  const menuItem =
+    "block w-full rounded-md px-3 py-2 text-left text-sm text-neutral-700 hover:bg-brand/5 hover:text-brand disabled:opacity-50";
 
   return (
     <div
@@ -74,7 +81,7 @@ export default function PresentationCard({
           {presentation.title.charAt(0)}
         </span>
       </div>
-      <div className="flex items-center justify-between gap-3 p-4">
+      <div className="flex items-center justify-between gap-2 p-4">
         <div className="min-w-0 flex-1">
           {isEditing ? (
             <input
@@ -93,43 +100,81 @@ export default function PresentationCard({
               className="w-full rounded border border-brand/50 px-1.5 py-0.5 text-sm font-semibold outline-none focus:border-brand"
             />
           ) : (
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              title="Rename"
-              className="block max-w-full truncate text-left text-sm font-semibold hover:text-brand"
-            >
+            <h2 className="truncate text-sm font-semibold" title={presentation.title}>
               {presentation.title}
-            </button>
+            </h2>
           )}
           <p className="mt-0.5 text-xs text-neutral-500">
             {slideCount} {slideCount === 1 ? "slide" : "slides"} · Edited{" "}
             {formatDate(presentation.updated_at)}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+
+        <div
+          className="relative shrink-0"
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
+        >
           <button
             type="button"
-            onClick={handlePresent}
+            onClick={() => setMenuOpen((open) => !open)}
             disabled={isPending}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            aria-label="Možnosti prezentace"
+            className="rounded-lg border border-neutral-200 px-2 py-1.5 text-neutral-600 hover:border-brand hover:text-brand disabled:opacity-50"
           >
-            Prezentovat
+            <span className="text-lg leading-none">⋯</span>
           </button>
-          <Link
-            href={`/editor/${presentation.id}`}
-            className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-brand hover:text-brand"
-          >
-            Edit
-          </Link>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isPending}
-            className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-brand hover:text-brand disabled:opacity-50"
-          >
-            Delete
-          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full z-10 pt-1">
+              <div
+                role="menu"
+                className="w-40 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handlePresent}
+                  disabled={isPending}
+                  className={menuItem}
+                >
+                  Prezentovat
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push(`/editor/${presentation.id}`);
+                  }}
+                  className={menuItem}
+                >
+                  Upravit
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setIsEditing(true);
+                  }}
+                  className={menuItem}
+                >
+                  Přejmenovat
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleDelete}
+                  disabled={isPending}
+                  className={`${menuItem} hover:bg-red-50 hover:text-red-600`}
+                >
+                  Smazat
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

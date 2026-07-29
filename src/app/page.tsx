@@ -23,7 +23,7 @@ export default async function HomePage() {
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/logo-qt.svg"
-              alt="Q&Q logo"
+              alt="Qt logo"
               width={91}
               height={30}
               priority
@@ -76,7 +76,7 @@ export default async function HomePage() {
           today?
         </h1>
         <p className="mt-6 max-w-xl text-lg text-neutral-600">
-          Q&amp;Q makes interactive presentations that get your audience
+          Qt makes interactive presentations that get your audience
           talking — quizzes, polls and live Q&amp;A in one place.
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -118,7 +118,7 @@ export default async function HomePage() {
       </main>
 
       <footer className="border-t border-neutral-200 py-6 text-center text-sm text-neutral-400">
-        Q&amp;Q — interactive presentations
+        Qt — interactive presentations
       </footer>
     </div>
   );
