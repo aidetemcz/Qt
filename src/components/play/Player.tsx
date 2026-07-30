@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import SlideView from "@/components/slide/SlideView";
 import type { Session, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
 
@@ -48,20 +49,10 @@ export default function Player({
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-900 text-white">
-      <main className="flex flex-1 items-center justify-center px-5 py-10">
+      <main className="flex flex-1 items-center justify-center px-4 py-8">
         {slide ? (
-          <div className="w-full max-w-xl text-center">
-            {slide.config.heading && (
-              <h1 className="text-3xl font-bold">{slide.config.heading}</h1>
-            )}
-            {slide.config.body && (
-              <p className="mt-4 whitespace-pre-wrap text-lg text-neutral-200">
-                {slide.config.body}
-              </p>
-            )}
-            {!slide.config.heading && !slide.config.body && (
-              <p className="text-lg text-neutral-500">Prázdný slide</p>
-            )}
+          <div className="w-full max-w-xl">
+            <SlideView config={slide.config} />
           </div>
         ) : (
           <p className="text-center text-neutral-400">

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import SlideView from "@/components/slide/SlideView";
 import type { Session, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
 
@@ -13,6 +15,7 @@ export default function Presenter({
   title: string;
   slides: Slide[];
 }) {
+  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   // current_position from the session is the source of truth; the canvas
   // renders whatever value the database last confirmed.
@@ -43,36 +46,46 @@ export default function Presenter({
     setPosition(data.current_position);
   }
 
+  async function endPresentation() {
+    if (!confirm("Ukončit prezentaci?")) {
+      return;
+    }
+    setIsPending(true);
+    await supabase
+      .from("sessions")
+      .update({ is_active: false })
+      .eq("id", session.id);
+    router.push("/dashboard");
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-neutral-900 text-white">
       <header className="flex items-center justify-between gap-4 px-6 py-4">
         <span className="truncate text-sm text-neutral-400">{title}</span>
-        <div className="flex items-center gap-3">
-          <span className="text-xs uppercase tracking-wide text-neutral-400">
-            Kód místnosti
-          </span>
-          <span className="rounded-lg bg-white/10 px-4 py-1.5 font-mono text-2xl font-bold tracking-[0.25em] text-white">
-            {session.code}
-          </span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xs uppercase tracking-wide text-neutral-400">
+              Kód místnosti
+            </span>
+            <span className="rounded-lg bg-white/10 px-4 py-1.5 font-mono text-2xl font-bold tracking-[0.25em] text-white">
+              {session.code}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={endPresentation}
+            disabled={isPending}
+            className="rounded-lg border border-white/20 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-40"
+          >
+            Ukončit prezentaci
+          </button>
         </div>
       </header>
 
       <main className="flex flex-1 items-center justify-center px-6">
         {slide ? (
-          <div className="w-full max-w-4xl text-center">
-            {slide.config.heading && (
-              <h1 className="text-4xl font-bold sm:text-5xl">
-                {slide.config.heading}
-              </h1>
-            )}
-            {slide.config.body && (
-              <p className="mt-6 whitespace-pre-wrap text-xl text-neutral-200 sm:text-2xl">
-                {slide.config.body}
-              </p>
-            )}
-            {!slide.config.heading && !slide.config.body && (
-              <p className="text-xl text-neutral-500">Prázdný slide</p>
-            )}
+          <div className="w-full max-w-4xl">
+            <SlideView config={slide.config} />
           </div>
         ) : (
           <p className="text-lg text-neutral-400">

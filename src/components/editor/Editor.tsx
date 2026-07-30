@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { renamePresentation } from "@/app/dashboard/actions";
+import { BODY_MAX, HEADING_MAX } from "@/components/slide/SlideView";
 import type { Presentation, Slide, SlideConfig } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
 
@@ -285,10 +286,11 @@ export default function Editor({
 
         <main className="flex flex-1 items-start justify-center p-4 md:p-8">
           {selected ? (
-            <div className="w-full max-w-3xl rounded-xl border border-neutral-200 bg-white p-6 shadow-sm md:aspect-video md:p-10">
+            <div className="flex aspect-video w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white p-6 shadow-sm sm:p-8">
               <input
                 type="text"
                 value={selected.config.heading}
+                maxLength={HEADING_MAX}
                 onChange={(e) =>
                   updateConfig(selected.id, {
                     ...selected.config,
@@ -296,10 +298,11 @@ export default function Editor({
                   })
                 }
                 placeholder="Nadpis slidu"
-                className="w-full border-0 text-2xl font-bold outline-none placeholder:text-neutral-300 md:text-3xl"
+                className="w-full shrink-0 break-words border-0 text-3xl font-bold text-neutral-900 outline-none placeholder:text-neutral-300"
               />
               <textarea
                 value={selected.config.body}
+                maxLength={BODY_MAX}
                 onChange={(e) =>
                   updateConfig(selected.id, {
                     ...selected.config,
@@ -307,8 +310,7 @@ export default function Editor({
                   })
                 }
                 placeholder="Text slidu…"
-                rows={10}
-                className="mt-4 w-full resize-none border-0 text-base text-neutral-700 outline-none placeholder:text-neutral-300"
+                className="mt-4 min-h-0 w-full flex-1 resize-none border-0 text-lg text-neutral-700 outline-none placeholder:text-neutral-300"
               />
             </div>
           ) : (
