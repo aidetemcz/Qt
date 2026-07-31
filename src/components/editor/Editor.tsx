@@ -3,9 +3,27 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { renamePresentation } from "@/app/dashboard/actions";
-import { BODY_MAX, HEADING_MAX } from "@/components/slide/SlideView";
-import type { Presentation, Slide, SlideConfig } from "@/lib/presentations";
+import SlideView, {
+  BODY_MAX,
+  DEFAULT_ALIGN,
+  DEFAULT_BODY_SIZE,
+  DEFAULT_HEADING_SIZE,
+  DEFAULT_VALIGN,
+  HEADING_MAX,
+  MAX_SIZE,
+  MIN_SIZE,
+} from "@/components/slide/SlideView";
+import type {
+  Presentation,
+  Slide,
+  SlideAlign,
+  SlideConfig,
+  SlideVAlign,
+} from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
+
+const VALIGNS: SlideVAlign[] = ["top", "center", "bottom"];
+const ALIGNS: SlideAlign[] = ["left", "center", "right"];
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -284,41 +302,107 @@ export default function Editor({
           </ul>
         </aside>
 
-        <main className="flex flex-1 items-start justify-center p-4 md:p-8">
+        <main className="flex flex-1 flex-col items-center gap-4 overflow-auto p-4 md:p-8">
           {selected ? (
-            <div className="flex aspect-video w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white p-6 shadow-sm sm:p-8">
-              <input
-                type="text"
-                value={selected.config.heading}
-                maxLength={HEADING_MAX}
-                onChange={(e) =>
-                  updateConfig(selected.id, {
-                    ...selected.config,
-                    heading: e.target.value,
-                  })
-                }
-                placeholder="Nadpis slidu"
-                className="w-full shrink-0 break-words border-0 text-3xl font-bold text-neutral-900 outline-none placeholder:text-neutral-300"
-              />
-              <textarea
-                value={selected.config.body}
-                maxLength={BODY_MAX}
-                onChange={(e) =>
-                  updateConfig(selected.id, {
-                    ...selected.config,
-                    body: e.target.value,
-                  })
-                }
-                placeholder="Text slidu…"
-                className="mt-4 min-h-0 w-full flex-1 resize-none border-0 text-lg text-neutral-700 outline-none placeholder:text-neutral-300"
-              />
-            </div>
+            <SlideEditor
+              config={selected.config}
+              onChange={(config) => updateConfig(selected.id, config)}
+            />
           ) : (
             <p className="mt-16 text-sm text-neutral-500">
               Žádné slidy. Přidej první tlačítkem „Přidat slide".
             </p>
           )}
         </main>
+      </div>
+    </div>
+  );
+}
+
+function SlideEditor({
+  config,
+  onChange,
+}: {
+  config: SlideConfig;
+  onChange: (config: SlideConfig) => void;
+}) {
+  const headingSize = config.headingSize ?? DEFAULT_HEADING_SIZE;
+  const bodySize = config.bodySize ?? DEFAULT_BODY_SIZE;
+  const align = config.align ?? DEFAULT_ALIGN;
+  const valign = config.valign ?? DEFAULT_VALIGN;
+
+  function patch(next: Partial<SlideConfig>) {
+    onChange({ ...config, ...next });
+  }
+
+  return (
+    <div className="flex w-full max-w-3xl flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-6 rounded-lg border border-neutral-200 bg-white p-3">
+        <div>
+          <p className="mb-1 text-xs font-medium text-neutral-500">Pozice textu</p>
+          <div className="grid grid-cols-3 gap-0.5">
+            {VALIGNS.map((v) =>
+              ALIGNS.map((a) => {
+                const active = v === valign && a === align;
+                return (
+                  <button
+                    key={`${v}-${a}`}
+                    type="button"
+                    aria-label={`Zarovnat ${a} ${v}`}
+                    aria-pressed={active}
+                    onClick={() => patch({ align: a, valign: v })}
+                    className={`h-5 w-5 rounded-sm border ${active ? "border-brand bg-brand/20" : "border-neutral-200 hover:bg-neutral-100"}`}
+                  />
+                );
+              }),
+            )}
+          </div>
+        </div>
+
+        <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+          Velikost nadpisu ({headingSize})
+          <input
+            type="range"
+            min={MIN_SIZE}
+            max={MAX_SIZE}
+            value={headingSize}
+            onChange={(e) => patch({ headingSize: Number(e.target.value) })}
+            className="w-36 accent-brand"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500">
+          Velikost textu ({bodySize})
+          <input
+            type="range"
+            min={MIN_SIZE}
+            max={MAX_SIZE}
+            value={bodySize}
+            onChange={(e) => patch({ bodySize: Number(e.target.value) })}
+            className="w-36 accent-brand"
+          />
+        </label>
+      </div>
+
+      <SlideView config={config} />
+
+      <div className="flex flex-col gap-3">
+        <input
+          type="text"
+          value={config.heading}
+          maxLength={HEADING_MAX}
+          onChange={(e) => patch({ heading: e.target.value })}
+          placeholder="Nadpis slidu"
+          className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm font-semibold outline-none focus:border-brand"
+        />
+        <textarea
+          value={config.body}
+          maxLength={BODY_MAX}
+          rows={4}
+          onChange={(e) => patch({ body: e.target.value })}
+          placeholder="Text slidu…"
+          className="w-full resize-none rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-brand"
+        />
       </div>
     </div>
   );

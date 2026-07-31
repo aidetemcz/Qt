@@ -5,9 +5,18 @@ export interface Presentation {
   updated_at: string;
 }
 
+export type SlideAlign = "left" | "center" | "right";
+export type SlideVAlign = "top" | "center" | "bottom";
+
 export interface SlideConfig {
   heading: string;
   body: string;
+  /** Font sizes in px on the 960-wide slide base (scaled to the frame). */
+  headingSize?: number;
+  bodySize?: number;
+  /** Position of the text block within the slide. */
+  align?: SlideAlign;
+  valign?: SlideVAlign;
 }
 
 export interface Slide {
