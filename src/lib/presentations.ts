@@ -8,13 +8,28 @@ export interface Presentation {
 export type SlideAlign = "left" | "center" | "right";
 export type SlideVAlign = "top" | "center" | "bottom";
 
+export type SlideElementKind = "heading" | "body";
+
+/** A freely positioned text box on the slide, in the 960×540 base coordinate
+ * system (scaled to whatever size the slide is rendered at). */
+export interface SlideElement {
+  id: string;
+  kind: SlideElementKind;
+  text: string;
+  x: number;
+  y: number;
+  w: number;
+  fontSize: number;
+}
+
 export interface SlideConfig {
-  heading: string;
-  body: string;
-  /** Font sizes in px on the 960-wide slide base (scaled to the frame). */
+  /** Freely positioned text boxes (current model). */
+  elements?: SlideElement[];
+  /** Legacy single heading/body fields, kept for backward compatibility. */
+  heading?: string;
+  body?: string;
   headingSize?: number;
   bodySize?: number;
-  /** Position of the text block within the slide. */
   align?: SlideAlign;
   valign?: SlideVAlign;
 }

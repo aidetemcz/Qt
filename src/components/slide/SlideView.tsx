@@ -1,84 +1,102 @@
-import type { SlideAlign, SlideConfig, SlideVAlign } from "@/lib/presentations";
+import type { SlideConfig, SlideElement } from "@/lib/presentations";
 
 /** Character limits so authored text stays within the slide frame. */
-export const HEADING_MAX = 100;
-export const BODY_MAX = 500;
+export const HEADING_MAX = 120;
+export const BODY_MAX = 800;
 
-/** Font size bounds, in px on the 960-wide slide base. */
-export const MIN_SIZE = 12;
-export const MAX_SIZE = 120;
-export const DEFAULT_HEADING_SIZE = 48;
-export const DEFAULT_BODY_SIZE = 28;
+/** Font size bounds, in px on the 960×540 slide base. */
+export const MIN_SIZE = 10;
+export const MAX_SIZE = 300;
+export const DEFAULT_HEADING_SIZE = 60;
+export const DEFAULT_BODY_SIZE = 32;
 
-export const DEFAULT_ALIGN: SlideAlign = "left";
-export const DEFAULT_VALIGN: SlideVAlign = "top";
+export const SLIDE_W = 960;
+export const SLIDE_H = 540;
 
-const SLIDE_BASE_WIDTH = 960;
-
-/** Convert a px measurement on the slide base into container-query width units,
- * so the slide scales identically whatever size it is rendered at. */
+/** px on the slide base → container-query width units. */
 export function cqw(px: number): string {
-  return `${((px * 100) / SLIDE_BASE_WIDTH).toFixed(3)}cqw`;
+  return `${((px * 100) / SLIDE_W).toFixed(4)}cqw`;
+}
+/** px on the slide base → container-query height units. */
+export function cqh(px: number): string {
+  return `${((px * 100) / SLIDE_H).toFixed(4)}cqh`;
 }
 
-const vAlignClass: Record<SlideVAlign, string> = {
-  top: "justify-start",
-  center: "justify-center",
-  bottom: "justify-end",
-};
+/** Resolve a slide's text boxes, migrating the legacy heading/body fields. */
+export function getElements(config: SlideConfig): SlideElement[] {
+  if (config.elements && config.elements.length > 0) {
+    return config.elements;
+  }
+  const elements: SlideElement[] = [];
+  let y = 64;
+  if (config.heading) {
+    const fontSize = config.headingSize ?? DEFAULT_HEADING_SIZE;
+    elements.push({
+      id: "legacy-heading",
+      kind: "heading",
+      text: config.heading,
+      x: 64,
+      y,
+      w: SLIDE_W - 128,
+      fontSize,
+    });
+    y += fontSize + 28;
+  }
+  if (config.body) {
+    elements.push({
+      id: "legacy-body",
+      kind: "body",
+      text: config.body,
+      x: 64,
+      y,
+      w: SLIDE_W - 128,
+      fontSize: config.bodySize ?? DEFAULT_BODY_SIZE,
+    });
+  }
+  return elements;
+}
 
-const textAlignClass: Record<SlideAlign, string> = {
-  left: "text-left",
-  center: "text-center",
-  right: "text-right",
-};
+export function elementClass(kind: SlideElement["kind"]): string {
+  return kind === "heading"
+    ? "font-bold leading-tight text-neutral-900"
+    : "leading-snug text-neutral-700";
+}
 
 /**
- * Canonical read-only rendering of a text slide. The editor previews with the
- * same component, so a slide looks the same while editing and while
- * presenting. The 16:9 frame is a query container: font sizes, padding and
- * gaps are expressed in cqw so everything scales with the frame; long words
- * wrap and overflow is clipped, so text can never escape the slide.
+ * Canonical read-only rendering of a slide. Each text box is absolutely
+ * positioned in a 16:9 query container, with position, width and font size in
+ * container-query units so the slide scales identically wherever it is shown.
+ * Long words wrap and overflow is clipped, so text can never escape the frame.
  */
 export default function SlideView({ config }: { config: SlideConfig }) {
-  const empty = !config.heading && !config.body;
-  const align = config.align ?? DEFAULT_ALIGN;
-  const valign = config.valign ?? DEFAULT_VALIGN;
-  const headingSize = config.headingSize ?? DEFAULT_HEADING_SIZE;
-  const bodySize = config.bodySize ?? DEFAULT_BODY_SIZE;
-
+  const elements = getElements(config);
   return (
     <div
-      className={`@container relative flex aspect-video w-full overflow-hidden rounded-xl bg-white shadow-sm ${vAlignClass[valign]}`}
-      style={{ padding: cqw(48), containerType: "inline-size" }}
+      className="relative aspect-video w-full overflow-hidden rounded-xl bg-white shadow-sm"
+      style={{ containerType: "size" }}
     >
-      {empty ? (
-        <div className="m-auto text-neutral-400" style={{ fontSize: cqw(28) }}>
+      {elements.length === 0 && (
+        <div
+          className="absolute inset-0 flex items-center justify-center text-neutral-400"
+          style={{ fontSize: cqw(28) }}
+        >
           Prázdný slide
         </div>
-      ) : (
-        <div
-          className={`flex w-full flex-col ${textAlignClass[align]}`}
-          style={{ gap: cqw(20) }}
-        >
-          {config.heading && (
-            <div
-              className="w-full whitespace-pre-wrap break-words font-bold leading-tight text-neutral-900"
-              style={{ fontSize: cqw(headingSize) }}
-            >
-              {config.heading}
-            </div>
-          )}
-          {config.body && (
-            <div
-              className="w-full whitespace-pre-wrap break-words leading-snug text-neutral-700"
-              style={{ fontSize: cqw(bodySize) }}
-            >
-              {config.body}
-            </div>
-          )}
-        </div>
       )}
+      {elements.map((el) => (
+        <div
+          key={el.id}
+          className={`absolute whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
+          style={{
+            left: cqw(el.x),
+            top: cqh(el.y),
+            width: cqw(el.w),
+            fontSize: cqw(el.fontSize),
+          }}
+        >
+          {el.text}
+        </div>
+      ))}
     </div>
   );
 }
