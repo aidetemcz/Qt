@@ -29,7 +29,7 @@ type Interaction = {
   id: string;
   startClientX: number;
   startClientY: number;
-  startEl: { x: number; y: number; w: number };
+  startEl: { x: number; y: number; w: number; fontSize: number };
   scale: number; // base px per screen px
 };
 
@@ -103,8 +103,20 @@ export default function SlideEditorCanvas({
         y: clamp(Math.round(it.startEl.y + dy), 0, SLIDE_H - 20),
       });
     } else {
+      // Corner drag scales the text: font size and box width grow together.
+      const newW = clamp(
+        Math.round(it.startEl.w + dx),
+        60,
+        SLIDE_W - it.startEl.x,
+      );
+      const ratio = newW / it.startEl.w;
       patchElement(it.id, {
-        w: clamp(Math.round(it.startEl.w + dx), 60, SLIDE_W - it.startEl.x),
+        w: newW,
+        fontSize: clamp(
+          Math.round(it.startEl.fontSize * ratio),
+          MIN_SIZE,
+          MAX_SIZE,
+        ),
       });
     }
   }
@@ -128,7 +140,7 @@ export default function SlideEditorCanvas({
       id: el.id,
       startClientX: e.clientX,
       startClientY: e.clientY,
-      startEl: { x: el.x, y: el.y, w: el.w },
+      startEl: { x: el.x, y: el.y, w: el.w, fontSize: el.fontSize },
       scale: currentScale(),
     };
     window.addEventListener("pointermove", onPointerMove);
@@ -156,33 +168,16 @@ export default function SlideEditorCanvas({
         </button>
 
         {selected ? (
-          <div className="ml-auto flex items-center gap-3">
-            <label className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-              Velikost ({selected.fontSize})
-              <input
-                type="range"
-                min={MIN_SIZE}
-                max={MAX_SIZE}
-                value={selected.fontSize}
-                onChange={(e) =>
-                  patchElement(selected.id, {
-                    fontSize: Number(e.target.value),
-                  })
-                }
-                className="w-40 accent-brand"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => deleteElement(selected.id)}
-              className="rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:border-red-300 hover:text-red-600"
-            >
-              Odebrat
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => deleteElement(selected.id)}
+            className="ml-auto rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:border-red-300 hover:text-red-600"
+          >
+            Odebrat
+          </button>
         ) : (
           <span className="ml-auto text-xs text-neutral-400">
-            Klikni na text pro úpravu, tahni pro přesun, dvojklik pro psaní.
+            Tahni pro přesun, roh pro velikost, dvojklik pro psaní.
           </span>
         )}
       </div>
@@ -246,8 +241,9 @@ export default function SlideEditorCanvas({
               {isSelected && !isEditing && (
                 <div
                   onPointerDown={(e) => startInteraction("resize", el, e)}
-                  className="absolute top-1/2 h-3 w-3 -translate-y-1/2 cursor-ew-resize rounded-sm border border-brand bg-white"
-                  style={{ right: cqw(-6) }}
+                  title="Táhni pro změnu velikosti textu"
+                  className="absolute h-3 w-3 cursor-nwse-resize rounded-sm border border-brand bg-white"
+                  style={{ right: cqw(-6), bottom: cqh(-6) }}
                 />
               )}
             </div>

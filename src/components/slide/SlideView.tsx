@@ -24,7 +24,9 @@ export function cqh(px: number): string {
 
 /** Resolve a slide's text boxes, migrating the legacy heading/body fields. */
 export function getElements(config: SlideConfig): SlideElement[] {
-  if (config.elements && config.elements.length > 0) {
+  // Once the elements model is in use, trust it even when empty — otherwise
+  // clearing a slide would fall back to the legacy heading/body and "reset".
+  if (Array.isArray(config.elements)) {
     return config.elements;
   }
   const elements: SlideElement[] = [];
