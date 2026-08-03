@@ -92,7 +92,7 @@ export default function SlideView({ config }: { config: SlideConfig }) {
           style={{
             left: cqw(el.x),
             top: cqh(el.y),
-            width: cqw(el.w),
+            maxWidth: cqw(SLIDE_W - el.x),
             fontSize: cqw(el.fontSize),
           }}
         >

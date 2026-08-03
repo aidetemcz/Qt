@@ -103,17 +103,12 @@ export default function SlideEditorCanvas({
         y: clamp(Math.round(it.startEl.y + dy), 0, SLIDE_H - 20),
       });
     } else {
-      // Corner drag scales the text: font size and box width grow together.
-      const newW = clamp(
-        Math.round(it.startEl.w + dx),
-        60,
-        SLIDE_W - it.startEl.x,
-      );
-      const ratio = newW / it.startEl.w;
+      // Corner drag scales the text size; the box hugs the text, so it grows
+      // with the font. Dragging down-right enlarges, up-left shrinks.
+      const delta = (dx + dy) / 2;
       patchElement(it.id, {
-        w: newW,
         fontSize: clamp(
-          Math.round(it.startEl.fontSize * ratio),
+          Math.round(it.startEl.fontSize + delta),
           MIN_SIZE,
           MAX_SIZE,
         ),
@@ -210,7 +205,8 @@ export default function SlideEditorCanvas({
               style={{
                 left: cqw(el.x),
                 top: cqh(el.y),
-                width: cqw(el.w),
+                maxWidth: cqw(SLIDE_W - el.x),
+                width: isEditing ? cqw(SLIDE_W - el.x) : undefined,
                 fontSize: cqw(el.fontSize),
               }}
             >
@@ -232,7 +228,7 @@ export default function SlideEditorCanvas({
                     setSelectedId(el.id);
                     setEditingId(el.id);
                   }}
-                  className={`w-full cursor-move whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
+                  className={`cursor-move whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
                 >
                   {el.text || (el.kind === "heading" ? "Nadpis" : "Hlavní text")}
                 </div>
