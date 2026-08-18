@@ -155,13 +155,10 @@ export default function Editor({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-neutral-50">
-      <header className="flex items-center justify-between gap-4 border-b border-neutral-200 bg-white px-4 py-3">
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="topbar sticky top-0 z-20 flex items-center justify-between gap-4 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="shrink-0 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-brand hover:text-brand"
-          >
+          <Link href="/dashboard" className="btn btn-secondary btn-sm shrink-0">
             ← Dashboard
           </Link>
           <input
@@ -179,11 +176,15 @@ export default function Editor({
             }}
             aria-label="Název prezentace"
             placeholder="Název prezentace"
-            className="min-w-0 flex-1 truncate rounded border border-transparent px-1.5 py-0.5 text-sm font-semibold outline-none hover:border-neutral-200 focus:border-brand"
+            className="min-w-0 flex-1 truncate rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-semibold text-neutral-900 transition-colors duration-150 outline-none hover:border-border hover:bg-background focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/20"
           />
         </div>
         <span
-          className={`shrink-0 text-xs ${saveState === "error" ? "font-medium text-red-600" : "text-neutral-400"}`}
+          className={`shrink-0 rounded-full px-2.5 py-1 text-xs transition-colors duration-150 ${
+            saveState === "error"
+              ? "bg-red-50 font-medium text-danger"
+              : "text-muted"
+          } ${saveState === "saved" ? "animate-pop" : ""}`}
           aria-live="polite"
         >
           {saveLabels[saveState]}
@@ -191,7 +192,7 @@ export default function Editor({
       </header>
 
       <div className="flex flex-1 flex-col md:flex-row">
-        <aside className="flex w-full flex-col gap-2 border-b border-neutral-200 bg-white p-3 md:w-56 md:border-b-0 md:border-r">
+        <aside className="flex w-full flex-col gap-3 border-b border-border bg-surface p-3 md:w-64 md:border-b-0 md:border-r">
           <div
             className="relative"
             onMouseEnter={() => setAddMenuOpen(true)}
@@ -202,16 +203,13 @@ export default function Editor({
               onClick={() => setAddMenuOpen((open) => !open)}
               aria-haspopup="menu"
               aria-expanded={addMenuOpen}
-              className="w-full rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
+              className="btn btn-primary w-full"
             >
               + Přidat slide
             </button>
             {addMenuOpen && (
-              <div className="absolute left-0 right-0 top-full z-10 pt-1">
-                <div
-                  role="menu"
-                  className="rounded-lg border border-neutral-200 bg-white p-1 shadow-lg"
-                >
+              <div className="absolute left-0 right-0 top-full z-10 pt-1.5">
+                <div role="menu" className="menu-surface animate-fade-in">
                   <button
                     type="button"
                     role="menuitem"
@@ -219,12 +217,12 @@ export default function Editor({
                       setAddMenuOpen(false);
                       addSlide();
                     }}
-                    className="flex w-full flex-col rounded-md px-3 py-2 text-left hover:bg-brand/5"
+                    className="flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors duration-150 hover:bg-brand-50"
                   >
-                    <span className="text-sm font-medium text-neutral-800">
+                    <span className="text-sm font-medium text-neutral-900">
                       Text
                     </span>
-                    <span className="text-xs text-neutral-500">
+                    <span className="text-xs text-muted">
                       Nadpis a odstavec textu
                     </span>
                   </button>
@@ -236,10 +234,10 @@ export default function Editor({
             {slides.map((slide, index) => (
               <li key={slide.id}>
                 <div
-                  className={`group rounded-lg border p-2 ${
+                  className={`group animate-fade-in rounded-xl border p-2.5 transition-all duration-150 ${
                     slide.id === selectedId
-                      ? "border-brand bg-brand/5"
-                      : "border-neutral-200 bg-white hover:border-neutral-300"
+                      ? "border-brand bg-brand-50 shadow-sm"
+                      : "border-border bg-surface hover:border-brand/40 hover:bg-brand-50/50"
                   }`}
                 >
                   <button
@@ -247,10 +245,16 @@ export default function Editor({
                     onClick={() => setSelectedId(slide.id)}
                     className="flex w-full items-start gap-2 text-left"
                   >
-                    <span className="shrink-0 text-xs font-bold text-neutral-400">
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[0.6875rem] font-bold ${
+                        slide.id === selectedId
+                          ? "bg-brand text-white"
+                          : "bg-background text-muted"
+                      }`}
+                    >
                       {index + 1}
                     </span>
-                    <span className="line-clamp-2 min-w-0 flex-1 text-xs text-neutral-700">
+                    <span className="line-clamp-2 min-w-0 flex-1 text-xs leading-relaxed text-neutral-700">
                       {snippet(slide.config)}
                     </span>
                   </button>
@@ -260,7 +264,7 @@ export default function Editor({
                       onClick={() => moveSlide(index, -1)}
                       disabled={index === 0}
                       title="Posunout nahoru"
-                      className="rounded px-1.5 py-0.5 text-xs text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 disabled:opacity-30"
+                      className="rounded-md px-1.5 py-0.5 text-xs text-muted transition-colors duration-150 hover:bg-background hover:text-neutral-900 disabled:opacity-30"
                     >
                       ↑
                     </button>
@@ -269,7 +273,7 @@ export default function Editor({
                       onClick={() => moveSlide(index, 1)}
                       disabled={index === slides.length - 1}
                       title="Posunout dolů"
-                      className="rounded px-1.5 py-0.5 text-xs text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 disabled:opacity-30"
+                      className="rounded-md px-1.5 py-0.5 text-xs text-muted transition-colors duration-150 hover:bg-background hover:text-neutral-900 disabled:opacity-30"
                     >
                       ↓
                     </button>
@@ -277,7 +281,7 @@ export default function Editor({
                       type="button"
                       onClick={() => deleteSlide(slide)}
                       title="Smazat slide"
-                      className="rounded px-1.5 py-0.5 text-xs text-neutral-500 hover:bg-red-50 hover:text-red-600"
+                      className="rounded-md px-1.5 py-0.5 text-xs text-muted transition-colors duration-150 hover:bg-red-50 hover:text-danger"
                     >
                       Smazat
                     </button>
@@ -295,7 +299,7 @@ export default function Editor({
               onChange={(config) => updateConfig(selected.id, config)}
             />
           ) : (
-            <p className="mt-16 text-sm text-neutral-500">
+            <p className="mt-16 text-sm text-muted">
               Žádné slidy. Přidej první tlačítkem „Přidat slide".
             </p>
           )}

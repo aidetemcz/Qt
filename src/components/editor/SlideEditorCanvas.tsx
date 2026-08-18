@@ -146,18 +146,18 @@ export default function SlideEditorCanvas({
 
   return (
     <div className="flex w-full max-w-4xl flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3">
+      <div className="card flex flex-wrap items-center gap-2 p-3">
         <button
           type="button"
           onClick={() => addElement("heading")}
-          className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+          className="btn btn-primary btn-sm"
         >
           + Přidat nadpis
         </button>
         <button
           type="button"
           onClick={() => addElement("body")}
-          className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+          className="btn btn-primary btn-sm"
         >
           + Přidat hlavní text
         </button>
@@ -166,12 +166,12 @@ export default function SlideEditorCanvas({
           <button
             type="button"
             onClick={() => deleteElement(selected.id)}
-            className="ml-auto rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:border-red-300 hover:text-red-600"
+            className="btn btn-secondary btn-sm ml-auto hover:border-red-300 hover:text-danger"
           >
             Odebrat
           </button>
         ) : (
-          <span className="ml-auto text-xs text-neutral-400">
+          <span className="ml-auto text-xs text-muted">
             Tahni pro přesun, roh pro velikost, dvojklik pro psaní.
           </span>
         )}
@@ -183,7 +183,7 @@ export default function SlideEditorCanvas({
           setSelectedId(null);
           setEditingId(null);
         }}
-        className="relative aspect-video w-full overflow-hidden rounded-xl bg-white shadow-sm"
+        className="relative aspect-video w-full overflow-hidden rounded-card bg-surface shadow-card ring-1 ring-border"
         style={{ containerType: "size" }}
       >
         {elements.length === 0 && (
@@ -201,7 +201,7 @@ export default function SlideEditorCanvas({
           return (
             <div
               key={el.id}
-              className={`absolute ${isSelected ? "outline outline-2 outline-brand" : ""}`}
+              className={`absolute ${isSelected ? "outline-2 outline-offset-2 outline-brand rounded-sm" : ""}`}
               style={{
                 left: cqw(el.x),
                 top: cqh(el.y),
@@ -238,7 +238,7 @@ export default function SlideEditorCanvas({
                 <div
                   onPointerDown={(e) => startInteraction("resize", el, e)}
                   title="Táhni pro změnu velikosti textu"
-                  className="absolute h-3 w-3 cursor-nwse-resize rounded-sm border border-brand bg-white"
+                  className="absolute h-3.5 w-3.5 cursor-nwse-resize rounded-full border-2 border-brand bg-surface shadow-sm transition-transform duration-150 hover:scale-125"
                   style={{ right: cqw(-6), bottom: cqh(-6) }}
                 />
               )}
