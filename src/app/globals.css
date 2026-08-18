@@ -79,6 +79,81 @@
   }
 }
 
+@layer base {
+  body {
+    font-family: var(--font-sans);
+  }
+}
+
+/* ── Shared UI primitives ──────────────────────────────────────────────
+ * Purely presentational classes so buttons, inputs, cards and the top bar
+ * look the same everywhere and can be tuned from this one place.
+ */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5
+      text-sm font-medium transition-all duration-150 ease-out
+      focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none
+      disabled:pointer-events-none disabled:opacity-50
+      motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0;
+  }
+  .btn-sm {
+    @apply rounded-lg px-3 py-1.5 text-xs;
+  }
+  .btn-lg {
+    @apply rounded-2xl px-6 py-3 text-base;
+  }
+  .btn-primary {
+    @apply bg-brand text-white shadow-sm hover:bg-brand-dark hover:shadow-md;
+  }
+  .btn-secondary {
+    @apply border border-border bg-surface text-neutral-700
+      hover:border-brand hover:text-brand hover:shadow-sm;
+  }
+  .btn-ghost {
+    @apply text-muted hover:bg-brand-50 hover:text-brand;
+  }
+  .btn-danger {
+    @apply text-muted hover:bg-red-50 hover:text-danger;
+  }
+  .btn-disabled {
+    @apply cursor-not-allowed text-muted opacity-60;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-border bg-surface px-3.5 py-2.5
+      text-sm text-neutral-900 transition-colors duration-150
+      placeholder:text-neutral-400
+      focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none;
+  }
+
+  .card {
+    @apply rounded-card border border-border bg-surface shadow-card
+      transition-shadow duration-200 ease-out;
+  }
+  .card-interactive {
+    @apply hover:shadow-card-hover motion-safe:transition-transform
+      motion-safe:duration-200 motion-safe:hover:-translate-y-0.5;
+  }
+
+  .panel {
+    @apply rounded-panel border border-border bg-surface shadow-card;
+  }
+
+  .topbar {
+    @apply border-b border-border bg-surface/85 backdrop-blur-md;
+  }
+
+  .menu-surface {
+    @apply rounded-xl border border-border bg-surface p-1 shadow-pop;
+  }
+  .menu-item {
+    @apply block w-full rounded-lg px-3 py-2 text-left text-sm text-neutral-700
+      transition-colors duration-150 hover:bg-brand-50 hover:text-brand
+      disabled:opacity-50;
+  }
+}
+
 /* Respect users who prefer reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   *,

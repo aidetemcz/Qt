@@ -69,7 +69,7 @@ export default function LoginForm({ urlError }: { urlError?: string }) {
         <button
           type="button"
           onClick={() => sendLink(true)}
-          className="mt-4 text-sm font-medium text-brand underline-offset-2 hover:underline"
+          className="mt-4 text-sm font-medium text-brand underline-offset-4 transition-colors duration-150 hover:text-brand-dark hover:underline"
         >
           Poslat znovu
         </button>
@@ -93,7 +93,7 @@ export default function LoginForm({ urlError }: { urlError?: string }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Jana Nováková"
-          className="rounded-lg border border-neutral-300 px-3.5 py-2.5 text-sm outline-none focus:border-brand"
+          className="input"
         />
       </label>
       <label className="flex flex-col gap-1.5">
@@ -104,14 +104,14 @@ export default function LoginForm({ urlError }: { urlError?: string }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="jana@firma.cz"
-          className="rounded-lg border border-neutral-300 px-3.5 py-2.5 text-sm outline-none focus:border-brand"
+          className="input"
         />
       </label>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
         disabled={status === "sending"}
-        className="mt-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-wait disabled:opacity-60"
+        className="btn btn-primary mt-2 w-full"
       >
         {status === "sending" ? "Odesílám…" : "Poslat přihlašovací odkaz"}
       </button>

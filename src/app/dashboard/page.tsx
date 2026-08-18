@@ -34,13 +34,10 @@ export default async function DashboardPage() {
       <Sidebar />
       <main className="flex-1 px-6 py-8">
         <div className="mx-auto w-full max-w-5xl">
-          <div className="mb-4 flex items-center justify-end gap-3">
-            <span className="text-sm text-neutral-600">{displayName}</span>
+          <div className="mb-5 flex items-center justify-end gap-3">
+            <span className="text-sm font-medium text-muted">{displayName}</span>
             <form action={signOut}>
-              <button
-                type="submit"
-                className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:border-brand hover:text-brand"
-              >
+              <button type="submit" className="btn btn-secondary btn-sm">
                 Odhlásit
               </button>
             </form>

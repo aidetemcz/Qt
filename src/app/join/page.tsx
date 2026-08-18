@@ -54,7 +54,7 @@ export default function JoinPage() {
               setCode(e.target.value.replace(/\D/g, ""));
             }}
             placeholder="000000"
-            className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] outline-none focus:border-brand"
+            className="input px-4 py-3 text-center font-mono text-2xl tracking-[0.4em]"
           />
           {error && (
             <p className="text-center text-sm text-red-600">{error}</p>
@@ -62,7 +62,7 @@ export default function JoinPage() {
           <button
             type="submit"
             disabled={loading || code.length < 6}
-            className="rounded-lg bg-brand px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:opacity-50"
+            className="btn btn-primary btn-lg w-full text-sm"
           >
             {loading ? "Hledám…" : "Připojit se"}
           </button>

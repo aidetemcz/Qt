@@ -18,9 +18,12 @@ export default async function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur">
+      <header className="topbar sticky top-0 z-10">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-6">
-          <Link href="/" className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="flex items-center gap-2 transition-opacity duration-150 hover:opacity-80"
+          >
             <Image
               src="/logo-qt.svg"
               alt="Qt logo"
@@ -36,31 +39,22 @@ export default async function HomePage() {
                 type="button"
                 disabled
                 title="Coming soon"
-                className="cursor-not-allowed rounded-lg px-3 py-2 text-sm font-medium text-neutral-500"
+                className="btn btn-disabled"
               >
                 {item}
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/join"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
-            >
+          <div className="flex items-center gap-1.5">
+            <Link href="/join" className="btn btn-ghost">
               Join a room
             </Link>
             {!user && (
-              <Link
-                href="/login"
-                className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
-              >
+              <Link href="/login" className="btn btn-ghost">
                 Log in
               </Link>
             )}
-            <Link
-              href="/dashboard"
-              className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
-            >
+            <Link href="/dashboard" className="btn btn-primary">
               Go to projects
             </Link>
           </div>
