@@ -67,17 +67,16 @@ export default function PresentationCard({
     startTransition(() => startPresentation(presentation.id));
   }
 
-  const menuItem =
-    "block w-full rounded-md px-3 py-2 text-left text-sm text-neutral-700 hover:bg-brand/5 hover:text-brand disabled:opacity-50";
+  const menuItem = "menu-item";
 
   return (
     <div
-      className={`group rounded-xl border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md ${isPending ? "opacity-50" : ""}`}
+      className={`group card card-interactive animate-slide-up ${isPending ? "opacity-60" : ""}`}
     >
       <div
-        className={`flex aspect-video items-center justify-center rounded-t-xl bg-gradient-to-br ${thumbnailFor(presentation.id)}`}
+        className={`flex aspect-video items-center justify-center overflow-hidden rounded-t-2xl bg-gradient-to-br ${thumbnailFor(presentation.id)}`}
       >
-        <span className="text-4xl font-extrabold text-white/80">
+        <span className="text-5xl font-extrabold text-white/90 drop-shadow-sm transition-transform duration-200 ease-out motion-safe:group-hover:scale-110">
           {presentation.title.charAt(0)}
         </span>
       </div>
@@ -97,14 +96,17 @@ export default function PresentationCard({
                   e.currentTarget.blur();
                 }
               }}
-              className="w-full rounded border border-brand/50 px-1.5 py-0.5 text-sm font-semibold outline-none focus:border-brand"
+              className="input px-2 py-1 text-sm font-semibold"
             />
           ) : (
-            <h2 className="truncate text-sm font-semibold" title={presentation.title}>
+            <h2
+              className="truncate text-[0.9375rem] font-semibold text-neutral-900"
+              title={presentation.title}
+            >
               {presentation.title}
             </h2>
           )}
-          <p className="mt-0.5 text-xs text-neutral-500">
+          <p className="mt-1 text-xs text-muted">
             {slideCount} {slideCount === 1 ? "slide" : "slides"} · Edited{" "}
             {formatDate(presentation.updated_at)}
           </p>
@@ -122,16 +124,13 @@ export default function PresentationCard({
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             aria-label="Možnosti prezentace"
-            className="rounded-lg border border-neutral-200 px-2 py-1.5 text-neutral-600 hover:border-brand hover:text-brand disabled:opacity-50"
+            className="btn btn-secondary btn-sm px-2.5 py-1.5"
           >
             <span className="text-lg leading-none">⋯</span>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 bottom-full z-20 pb-1">
-              <div
-                role="menu"
-                className="w-40 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg"
-              >
+            <div className="absolute right-0 bottom-full z-20 pb-1.5">
+              <div role="menu" className="menu-surface animate-fade-in w-44">
                 <button
                   type="button"
                   role="menuitem"
@@ -168,7 +167,7 @@ export default function PresentationCard({
                   role="menuitem"
                   onClick={handleDelete}
                   disabled={isPending}
-                  className={`${menuItem} hover:bg-red-50 hover:text-red-600`}
+                  className={`${menuItem} hover:bg-red-50 hover:text-danger`}
                 >
                   Smazat
                 </button>
