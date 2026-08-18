@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
+import { Bricolage_Grotesque, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+
+const display = Bricolage_Grotesque({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const sans = Plus_Jakarta_Sans({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-body",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Qt",
@@ -12,8 +25,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-background text-neutral-900 antialiased">
+    <html lang="en" className={`${display.variable} ${sans.variable}`}>
+      <body className="relative min-h-screen bg-background text-ink antialiased">
+        {/* Ambient light blooms behind the whole app. */}
+        <div aria-hidden className="app-canvas" />
         {children}
       </body>
     </html>

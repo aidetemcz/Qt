@@ -14,13 +14,18 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand/10 via-white to-accent/10 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
-        <Link href="/" className="flex justify-center">
-          <Image src="/logo-qt.svg" alt="Qt logo" width={76} height={25} />
+    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+      <div className="panel animate-slide-up w-full max-w-md p-9 sm:p-10">
+        <Link
+          href="/"
+          className="flex justify-center transition-opacity duration-150 hover:opacity-80"
+        >
+          <Image src="/logo-qt.svg" alt="Qt logo" width={84} height={28} />
         </Link>
-        <h1 className="mt-6 text-center text-lg font-bold">Přihlášení</h1>
-        <p className="mt-1 mb-6 text-center text-sm text-neutral-500">
+        <h1 className="mt-8 text-center text-3xl font-extrabold text-ink">
+          Přihlášení
+        </h1>
+        <p className="mx-auto mt-3 mb-8 max-w-xs text-center text-sm leading-relaxed text-muted">
           Pošleme ti na email odkaz, kterým se přihlásíš. Bez hesla.
         </p>
         <LoginForm urlError={error} />

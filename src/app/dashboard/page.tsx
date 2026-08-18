@@ -42,18 +42,21 @@ export default async function DashboardPage() {
               </button>
             </form>
           </div>
-          <section className="animate-fade-in relative overflow-hidden rounded-panel bg-gradient-to-br from-brand via-brand/85 to-accent px-6 py-12 text-center shadow-card sm:py-16">
-            <div className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-20 -left-12 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
-            <h1 className="relative text-2xl font-extrabold tracking-tight text-white sm:text-4xl">
+          <section className="animate-fade-in relative overflow-hidden rounded-panel bg-gradient-to-br from-brand via-brand-dark to-accent-dark px-6 py-14 text-center shadow-card-hover sm:py-20">
+            <div className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full bg-white/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+            <p className="relative text-xs font-bold tracking-[0.16em] text-white/70 uppercase">
+              Your workspace
+            </p>
+            <h1 className="relative mt-4 text-3xl leading-tight font-extrabold text-white sm:text-5xl">
               What will you present today?
             </h1>
-            <div className="relative mx-auto mt-7 max-w-lg">
+            <div className="relative mx-auto mt-8 max-w-lg">
               <input
                 type="text"
                 disabled
                 placeholder="Search your projects (coming soon)"
-                className="w-full cursor-not-allowed rounded-full border-0 bg-surface/95 px-5 py-3 text-sm text-muted shadow-card placeholder:text-neutral-400"
+                className="w-full cursor-not-allowed rounded-full border-0 bg-surface/95 px-5 py-3.5 text-sm text-muted shadow-pop"
               />
             </div>
           </section>

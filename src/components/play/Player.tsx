@@ -48,20 +48,36 @@ export default function Player({
   const slide = slides[clamped];
 
   return (
-    <div className="flex min-h-screen flex-col bg-neutral-900 text-white">
-      <main className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
+    <div className="relative flex min-h-screen flex-col bg-[#17120f] text-white">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background:
+            "radial-gradient(45rem 30rem at 20% -10%, rgb(220 91 91 / 0.22), transparent 62%), radial-gradient(40rem 28rem at 85% 108%, rgb(125 164 178 / 0.2), transparent 60%)",
+        }}
+      />
+      <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
         {slide ? (
-          <div className="w-full max-w-4xl">
+          <div
+            key={slide.id}
+            className="animate-fade-in w-full max-w-4xl rounded-panel shadow-pop"
+          >
             <SlideView config={slide.config} />
           </div>
         ) : (
-          <p className="text-center text-neutral-400">
+          <p className="text-center text-white/50">
             Prezentace zatím nemá žádné slidy.
           </p>
         )}
       </main>
-      <footer className="px-5 py-4 text-center text-xs text-neutral-500">
-        {total > 0 ? `${clamped + 1} / ${total}` : "0 / 0"} · kód {session.code}
+      <footer className="relative z-10 flex items-center justify-center gap-3 px-5 py-5 text-xs">
+        <span className="font-mono tracking-widest text-white/45">
+          {total > 0 ? `${clamped + 1} / ${total}` : "0 / 0"}
+        </span>
+        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono tracking-[0.2em] text-white/60">
+          {session.code}
+        </span>
       </footer>
     </div>
   );
