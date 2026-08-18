@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { renamePresentation } from "@/app/dashboard/actions";
 import SlideEditorCanvas from "@/components/editor/SlideEditorCanvas";
-import { getElements } from "@/components/slide/SlideView";
+import SlideTypePicker from "@/components/editor/SlideTypePicker";
+import SlideView, { getElements } from "@/components/slide/SlideView";
+import {
+  SLIDE_TYPES,
+  slideTypeById,
+  type SlideTypeDef,
+} from "@/lib/slideTypes";
 import type { Presentation, Slide, SlideConfig } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
 
@@ -38,7 +44,9 @@ export default function Editor({
     initialSlides[0]?.id ?? null,
   );
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  // When open, the working area shows the slide-type chooser instead of the
+  // canvas (Kahoot style) — the rail stays visible the whole time.
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [title, setTitle] = useState(presentation.title);
   const savedTitle = useRef(presentation.title);
   const saveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
@@ -87,7 +95,7 @@ export default function Editor({
     );
   }
 
-  async function addSlide() {
+  async function addSlide(type: SlideTypeDef = SLIDE_TYPES[0]) {
     setSaveState("saving");
     const lastPosition = slides[slides.length - 1]?.position ?? 0;
     const { data, error } = await supabase
@@ -95,8 +103,8 @@ export default function Editor({
       .insert({
         presentation_id: presentation.id,
         position: lastPosition + 1,
-        type: "text",
-        config: { elements: [] },
+        type: type.id,
+        config: type.initialConfig,
       })
       .select("id, presentation_id, position, type, config")
       .single<Slide>();
@@ -192,79 +200,52 @@ export default function Editor({
       </header>
 
       <div className="flex flex-1 flex-col md:flex-row">
-        <aside className="flex w-full flex-col gap-3 border-b border-border bg-surface p-3 md:w-64 md:border-b-0 md:border-r">
-          <div
-            className="relative"
-            onMouseEnter={() => setAddMenuOpen(true)}
-            onMouseLeave={() => setAddMenuOpen(false)}
-          >
-            <button
-              type="button"
-              onClick={() => setAddMenuOpen((open) => !open)}
-              aria-haspopup="menu"
-              aria-expanded={addMenuOpen}
-              className="btn btn-primary w-full"
-            >
-              + Přidat slide
-            </button>
-            {addMenuOpen && (
-              <div className="absolute left-0 right-0 top-full z-10 pt-1.5">
-                <div role="menu" className="menu-surface animate-fade-in">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setAddMenuOpen(false);
-                      addSlide();
-                    }}
-                    className="flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors duration-150 hover:bg-brand-50"
-                  >
-                    <span className="text-sm font-medium text-neutral-900">
-                      Text
-                    </span>
-                    <span className="text-xs text-muted">
-                      Nadpis a odstavec textu
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-          <ul className="flex flex-col gap-2 overflow-y-auto">
+        <aside className="flex w-full shrink-0 flex-col border-b border-border bg-surface md:w-56 md:border-b-0 md:border-r">
+          <ul className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
             {slides.map((slide, index) => (
-              <li key={slide.id}>
+              <li key={slide.id} className="animate-fade-in">
                 <div
-                  className={`group animate-fade-in rounded-xl border p-2.5 transition-all duration-150 ${
-                    slide.id === selectedId
+                  className={`group relative rounded-2xl border p-2 transition-all duration-150 ${
+                    slide.id === selectedId && !pickerOpen
                       ? "border-brand bg-brand-50 shadow-sm"
-                      : "border-border bg-surface hover:border-brand/40 hover:bg-brand-50/50"
+                      : "border-border bg-surface hover:border-brand/40"
                   }`}
                 >
                   <button
                     type="button"
-                    onClick={() => setSelectedId(slide.id)}
-                    className="flex w-full items-start gap-2 text-left"
+                    onClick={() => {
+                      setPickerOpen(false);
+                      setSelectedId(slide.id);
+                    }}
+                    className="block w-full text-left"
+                    title={snippet(slide.config)}
                   >
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[0.6875rem] font-bold ${
-                        slide.id === selectedId
-                          ? "bg-brand text-white"
-                          : "bg-background text-muted"
-                      }`}
-                    >
-                      {index + 1}
+                    <span className="mb-1.5 flex items-center gap-1.5">
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded-md text-[0.6875rem] font-bold ${
+                          slide.id === selectedId && !pickerOpen
+                            ? "bg-brand text-white"
+                            : "bg-sunken text-muted"
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+                      <span className="truncate text-[0.625rem] font-semibold tracking-wide text-muted uppercase">
+                        {slideTypeById(slide.type)?.label ?? slide.type}
+                      </span>
                     </span>
-                    <span className="line-clamp-2 min-w-0 flex-1 text-xs leading-relaxed text-neutral-700">
-                      {snippet(slide.config)}
+                    {/* Live miniature of the slide itself. */}
+                    <span className="pointer-events-none block overflow-hidden rounded-xl ring-1 ring-border">
+                      <SlideView config={slide.config} />
                     </span>
                   </button>
-                  <div className="mt-1.5 flex items-center justify-end gap-1">
+                  <div className="mt-1.5 flex items-center justify-end gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
                     <button
                       type="button"
                       onClick={() => moveSlide(index, -1)}
                       disabled={index === 0}
                       title="Posunout nahoru"
-                      className="rounded-md px-1.5 py-0.5 text-xs text-muted transition-colors duration-150 hover:bg-background hover:text-neutral-900 disabled:opacity-30"
+                      className="rounded-md px-1.5 py-0.5 text-xs text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink disabled:opacity-30"
                     >
                       ↑
                     </button>
@@ -273,7 +254,7 @@ export default function Editor({
                       onClick={() => moveSlide(index, 1)}
                       disabled={index === slides.length - 1}
                       title="Posunout dolů"
-                      className="rounded-md px-1.5 py-0.5 text-xs text-muted transition-colors duration-150 hover:bg-background hover:text-neutral-900 disabled:opacity-30"
+                      className="rounded-md px-1.5 py-0.5 text-xs text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink disabled:opacity-30"
                     >
                       ↓
                     </button>
@@ -290,18 +271,52 @@ export default function Editor({
               </li>
             ))}
           </ul>
+
+          <div
+            className="border-t border-border p-3"
+            onMouseEnter={() => setPickerOpen(true)}
+          >
+            <button
+              type="button"
+              onClick={() => setPickerOpen((open) => !open)}
+              aria-expanded={pickerOpen}
+              className="btn btn-primary w-full"
+            >
+              + Přidat slide
+            </button>
+          </div>
         </aside>
 
-        <main className="flex flex-1 flex-col items-center gap-4 overflow-auto p-4 md:p-8">
-          {selected ? (
+        <main className="flex flex-1 flex-col items-center overflow-auto p-4 md:p-8">
+          {pickerOpen ? (
+            <SlideTypePicker
+              onClose={() => setPickerOpen(false)}
+              onPick={(type) => {
+                setPickerOpen(false);
+                addSlide(type);
+              }}
+            />
+          ) : selected ? (
             <SlideEditorCanvas
               config={selected.config}
               onChange={(config) => updateConfig(selected.id, config)}
             />
           ) : (
-            <p className="mt-16 text-sm text-muted">
-              Žádné slidy. Přidej první tlačítkem „Přidat slide".
-            </p>
+            <div className="mt-20 text-center">
+              <p className="text-base font-semibold text-ink">
+                Zatím žádné slidy
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                Přidej první tlačítkem „Přidat slide".
+              </p>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="btn btn-primary mt-6"
+              >
+                + Přidat slide
+              </button>
+            </div>
           )}
         </main>
       </div>
