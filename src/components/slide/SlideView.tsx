@@ -92,7 +92,16 @@ export default function SlideView({ config }: { config: SlideConfig }) {
         background: config.background ?? "#ffffff",
       }}
     >
-      {elements.length === 0 && (
+      {config.image?.src && (
+        // eslint-disable-next-line @next/next/no-img-element -- arbitrary user URLs
+        <img
+          src={config.image.src}
+          alt=""
+          className="absolute inset-0 h-full w-full"
+          style={{ objectFit: config.image.fit ?? "cover" }}
+        />
+      )}
+      {elements.length === 0 && !config.image?.src && (
         <div
           className="absolute inset-0 flex items-center justify-center text-neutral-400"
           style={{ fontSize: cqw(28) }}

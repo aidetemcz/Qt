@@ -26,11 +26,20 @@ export interface SlideElement {
   textAlign?: SlideAlign;
 }
 
+export type SlideImageFit = "cover" | "contain";
+
+export interface SlideImage {
+  src: string;
+  fit?: SlideImageFit;
+}
+
 export interface SlideConfig {
   /** Freely positioned text boxes (current model). */
   elements?: SlideElement[];
   /** Slide background colour set from the settings panel. */
   background?: string;
+  /** Full-bleed image behind the text boxes. */
+  image?: SlideImage;
   /** Legacy single heading/body fields, kept for backward compatibility. */
   heading?: string;
   body?: string;

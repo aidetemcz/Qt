@@ -1,11 +1,17 @@
 "use client";
 
+import { useMemo, useRef, useState } from "react";
 import { defaultColor } from "@/components/slide/SlideView";
 import type {
   SlideAlign,
   SlideConfig,
   SlideElement,
+  SlideImageFit,
 } from "@/lib/presentations";
+import { createClient } from "@/lib/supabase/client";
+
+/** Public Storage bucket that holds slide images. */
+const IMAGE_BUCKET = "slide-images";
 
 const TEXT_COLORS = [
   "#241d1a",
@@ -84,6 +90,141 @@ function Swatches({
           />
         </label>
       </div>
+    </div>
+  );
+}
+
+function ImageSettings({
+  config,
+  onPatchConfig,
+}: {
+  config: SlideConfig;
+  onPatchConfig: (patch: Partial<SlideConfig>) => void;
+}) {
+  const supabase = useMemo(() => createClient(), []);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [url, setUrl] = useState("");
+
+  const image = config.image;
+  const fit: SlideImageFit = image?.fit ?? "cover";
+
+  async function upload(file: File) {
+    setError(null);
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from(IMAGE_BUCKET)
+      .upload(path, file, { cacheControl: "3600" });
+    setUploading(false);
+    if (uploadError) {
+      setError(
+        `Nahrání se nepovedlo: ${uploadError.message}. Zkontroluj, že existuje veřejný bucket „${IMAGE_BUCKET}".`,
+      );
+      return;
+    }
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+    onPatchConfig({ image: { src: publicUrl, fit } });
+  }
+
+  return (
+    <div>
+      <p className="mb-2 text-xs font-bold tracking-wide text-muted uppercase">
+        Obrázek
+      </p>
+
+      {image?.src && (
+        <div className="mb-3 overflow-hidden rounded-xl border border-border">
+          {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user URLs */}
+          <img
+            src={image.src}
+            alt=""
+            className="aspect-video w-full object-cover"
+          />
+        </div>
+      )}
+
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) upload(file);
+          e.target.value = "";
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => fileInput.current?.click()}
+        disabled={uploading}
+        className="btn btn-primary btn-sm w-full"
+      >
+        {uploading
+          ? "Nahrávám…"
+          : image?.src
+            ? "Nahradit obrázek"
+            : "Nahrát obrázek"}
+      </button>
+
+      <div className="mt-2 flex gap-1.5">
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="…nebo vlož URL"
+          className="input px-3 py-2 text-xs"
+        />
+        <button
+          type="button"
+          disabled={!url.trim()}
+          onClick={() => {
+            onPatchConfig({ image: { src: url.trim(), fit } });
+            setUrl("");
+          }}
+          className="btn btn-secondary btn-sm shrink-0"
+        >
+          Použít
+        </button>
+      </div>
+
+      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+
+      {image?.src && (
+        <>
+          <div className="mt-3 flex gap-1.5">
+            {(["cover", "contain"] as SlideImageFit[]).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() =>
+                  onPatchConfig({ image: { ...image, fit: value } })
+                }
+                aria-pressed={fit === value}
+                className={`flex-1 rounded-xl border py-2 text-xs font-semibold transition-colors duration-150 ${
+                  fit === value
+                    ? "border-brand bg-brand-50 text-brand"
+                    : "border-border text-muted hover:border-brand/40"
+                }`}
+              >
+                {value === "cover" ? "Vyplnit" : "Vejít se"}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => onPatchConfig({ image: undefined })}
+            className="btn btn-secondary btn-sm mt-2 w-full hover:border-red-300 hover:text-danger"
+          >
+            Odebrat obrázek
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -200,6 +341,8 @@ export default function SlideSettingsPanel({
               Nastavení slidu
             </h2>
           </div>
+
+          <ImageSettings config={config} onPatchConfig={onPatchConfig} />
 
           <Swatches
             label="Barva pozadí"

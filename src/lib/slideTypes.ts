@@ -33,10 +33,10 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
   {
     id: "image",
     label: "Obrázek",
-    description: "Obrázek přes celý slide",
+    description: "Obrázek přes celý slide, text navrch",
     group: "Obsah",
     glyph: "▣",
-    available: false,
+    available: true,
     initialConfig: { elements: [] },
   },
   {
