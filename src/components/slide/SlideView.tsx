@@ -97,7 +97,8 @@ export default function SlideView({ config }: { config: SlideConfig }) {
         <img
           src={config.image.src}
           alt=""
-          className="absolute inset-0 h-full w-full"
+          draggable={false}
+          className="pointer-events-none absolute inset-0 h-full w-full select-none"
           style={{ objectFit: config.image.fit ?? "cover" }}
         />
       )}

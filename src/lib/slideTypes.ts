@@ -22,20 +22,13 @@ export interface SlideTypeDef {
 
 export const SLIDE_TYPES: SlideTypeDef[] = [
   {
+    // Obrázek není samostatný typ: každý textový slide může mít obrázek na
+    // pozadí, nastavuje se v panelu vpravo.
     id: "text",
     label: "Text",
-    description: "Nadpis a text kdekoli na slidu",
+    description: "Nadpis, text a obrázek kdekoli na slidu",
     group: "Obsah",
     glyph: "T",
-    available: true,
-    initialConfig: { elements: [] },
-  },
-  {
-    id: "image",
-    label: "Obrázek",
-    description: "Obrázek přes celý slide, text navrch",
-    group: "Obsah",
-    glyph: "▣",
     available: true,
     initialConfig: { elements: [] },
   },
@@ -92,6 +85,9 @@ export const SLIDE_TYPE_GROUPS: SlideTypeGroup[] = [
   "Interakce",
 ];
 
+/** Slidy uložené pod dřívějším samostatným typem "image" jsou textové slidy. */
+const LEGACY_TYPE_ALIASES: Record<string, string> = { image: "text" };
+
 export function slideTypeById(id: string): SlideTypeDef | undefined {
-  return SLIDE_TYPES.find((t) => t.id === id);
+  return SLIDE_TYPES.find((t) => t.id === (LEGACY_TYPE_ALIASES[id] ?? id));
 }
