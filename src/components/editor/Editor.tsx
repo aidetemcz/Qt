@@ -287,22 +287,25 @@ export default function Editor({
           </div>
         </aside>
 
-        <main className="flex flex-1 flex-col items-center overflow-auto p-4 md:p-8">
+        <main className="flex min-w-0 flex-1 overflow-hidden">
           {pickerOpen ? (
-            <SlideTypePicker
-              onClose={() => setPickerOpen(false)}
-              onPick={(type) => {
-                setPickerOpen(false);
-                addSlide(type);
-              }}
-            />
+            <div className="flex flex-1 justify-center overflow-auto p-4 md:p-8">
+              <SlideTypePicker
+                onClose={() => setPickerOpen(false)}
+                onPick={(type) => {
+                  setPickerOpen(false);
+                  addSlide(type);
+                }}
+              />
+            </div>
           ) : selected ? (
             <SlideEditorCanvas
+              key={selected.id}
               config={selected.config}
               onChange={(config) => updateConfig(selected.id, config)}
             />
           ) : (
-            <div className="mt-20 text-center">
+            <div className="mx-auto mt-20 text-center">
               <p className="text-base font-semibold text-ink">
                 Zatím žádné slidy
               </p>

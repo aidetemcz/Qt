@@ -59,9 +59,21 @@ export function getElements(config: SlideConfig): SlideElement[] {
 }
 
 export function elementClass(kind: SlideElement["kind"]): string {
-  return kind === "heading"
-    ? "font-bold leading-tight text-neutral-900"
-    : "leading-snug text-neutral-700";
+  return kind === "heading" ? "font-bold leading-tight" : "leading-snug";
+}
+
+/** Default text colour when an element has none set. */
+export function defaultColor(kind: SlideElement["kind"]): string {
+  return kind === "heading" ? "#241d1a" : "#4b423d";
+}
+
+/** Inline styles shared by the read-only view and the editor canvas. */
+export function elementStyle(el: SlideElement): React.CSSProperties {
+  return {
+    color: el.color ?? defaultColor(el.kind),
+    fontWeight: el.bold ? 800 : el.kind === "heading" ? 700 : 400,
+    textAlign: el.textAlign ?? "left",
+  };
 }
 
 /**
@@ -74,8 +86,11 @@ export default function SlideView({ config }: { config: SlideConfig }) {
   const elements = getElements(config);
   return (
     <div
-      className="relative aspect-video w-full overflow-hidden rounded-xl bg-white shadow-sm"
-      style={{ containerType: "size" }}
+      className="relative aspect-video w-full overflow-hidden rounded-xl shadow-sm"
+      style={{
+        containerType: "size",
+        background: config.background ?? "#ffffff",
+      }}
     >
       {elements.length === 0 && (
         <div
@@ -94,6 +109,7 @@ export default function SlideView({ config }: { config: SlideConfig }) {
             top: cqh(el.y),
             maxWidth: cqw(SLIDE_W - el.x),
             fontSize: cqw(el.fontSize),
+            ...elementStyle(el),
           }}
         >
           {el.text}

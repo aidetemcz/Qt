@@ -20,11 +20,17 @@ export interface SlideElement {
   y: number;
   w: number;
   fontSize: number;
+  /** Optional per-element styling set from the settings panel. */
+  color?: string;
+  bold?: boolean;
+  textAlign?: SlideAlign;
 }
 
 export interface SlideConfig {
   /** Freely positioned text boxes (current model). */
   elements?: SlideElement[];
+  /** Slide background colour set from the settings panel. */
+  background?: string;
   /** Legacy single heading/body fields, kept for backward compatibility. */
   heading?: string;
   body?: string;

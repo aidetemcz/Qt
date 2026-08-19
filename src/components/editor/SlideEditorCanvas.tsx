@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import SlideSettingsPanel from "@/components/editor/SlideSettingsPanel";
 import {
   BODY_MAX,
   cqh,
@@ -8,6 +9,7 @@ import {
   DEFAULT_BODY_SIZE,
   DEFAULT_HEADING_SIZE,
   elementClass,
+  elementStyle,
   getElements,
   HEADING_MAX,
   MAX_SIZE,
@@ -145,107 +147,128 @@ export default function SlideEditorCanvas({
   useEffect(() => () => endInteraction(), []);
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-3">
-      <div className="card flex flex-wrap items-center gap-2 p-3">
-        <button
-          type="button"
-          onClick={() => addElement("heading")}
-          className="btn btn-primary btn-sm"
-        >
-          + Přidat nadpis
-        </button>
-        <button
-          type="button"
-          onClick={() => addElement("body")}
-          className="btn btn-primary btn-sm"
-        >
-          + Přidat hlavní text
-        </button>
-
-        {selected ? (
+    <div className="flex w-full flex-1 flex-col lg:flex-row">
+      <div className="flex flex-1 flex-col gap-3 overflow-auto p-4 md:p-8">
+        <div className="card mx-auto flex w-full max-w-4xl flex-wrap items-center gap-2 p-3">
           <button
             type="button"
-            onClick={() => deleteElement(selected.id)}
-            className="btn btn-secondary btn-sm ml-auto hover:border-red-300 hover:text-danger"
+            onClick={() => addElement("heading")}
+            className="btn btn-primary btn-sm"
           >
-            Odebrat
+            + Přidat nadpis
           </button>
-        ) : (
-          <span className="ml-auto text-xs text-muted">
-            Tahni pro přesun, roh pro velikost, dvojklik pro psaní.
-          </span>
-        )}
-      </div>
-
-      <div
-        ref={frameRef}
-        onPointerDown={() => {
-          setSelectedId(null);
-          setEditingId(null);
-        }}
-        className="relative aspect-video w-full overflow-hidden rounded-card bg-surface shadow-card ring-1 ring-border"
-        style={{ containerType: "size" }}
-      >
-        {elements.length === 0 && (
-          <div
-            className="absolute inset-0 flex items-center justify-center text-neutral-400"
-            style={{ fontSize: cqw(28) }}
+          <button
+            type="button"
+            onClick={() => addElement("body")}
+            className="btn btn-primary btn-sm"
           >
-            Přidej nadpis nebo text tlačítky nahoře.
-          </div>
-        )}
+            + Přidat hlavní text
+          </button>
 
-        {elements.map((el) => {
-          const isSelected = el.id === selectedId;
-          const isEditing = el.id === editingId;
-          return (
-            <div
-              key={el.id}
-              className={`absolute ${isSelected ? "outline-2 outline-offset-2 outline-brand rounded-sm" : ""}`}
-              style={{
-                left: cqw(el.x),
-                top: cqh(el.y),
-                maxWidth: cqw(SLIDE_W - el.x),
-                width: isEditing ? cqw(SLIDE_W - el.x) : undefined,
-                fontSize: cqw(el.fontSize),
-              }}
+          {selected ? (
+            <button
+              type="button"
+              onClick={() => deleteElement(selected.id)}
+              className="btn btn-secondary btn-sm ml-auto hover:border-red-300 hover:text-danger"
             >
-              {isEditing ? (
-                <textarea
-                  autoFocus
-                  value={el.text}
-                  maxLength={el.kind === "heading" ? HEADING_MAX : BODY_MAX}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => patchElement(el.id, { text: e.target.value })}
-                  onBlur={() => setEditingId(null)}
-                  rows={1}
-                  className={`block w-full resize-none overflow-hidden border-0 bg-transparent p-0 outline-none [font-size:inherit] ${elementClass(el.kind)}`}
-                />
-              ) : (
-                <div
-                  onPointerDown={(e) => startInteraction("move", el, e)}
-                  onDoubleClick={() => {
-                    setSelectedId(el.id);
-                    setEditingId(el.id);
-                  }}
-                  className={`cursor-move whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
-                >
-                  {el.text || (el.kind === "heading" ? "Nadpis" : "Hlavní text")}
-                </div>
-              )}
+              Odebrat
+            </button>
+          ) : (
+            <span className="ml-auto text-xs text-muted">
+              Tahni pro přesun, roh pro velikost, dvojklik pro psaní.
+            </span>
+          )}
+        </div>
 
-              {isSelected && !isEditing && (
-                <div
-                  onPointerDown={(e) => startInteraction("resize", el, e)}
-                  title="Táhni pro změnu velikosti textu"
-                  className="absolute h-3.5 w-3.5 cursor-nwse-resize rounded-full border-2 border-brand bg-surface shadow-sm transition-transform duration-150 hover:scale-125"
-                  style={{ right: cqw(-6), bottom: cqh(-6) }}
-                />
-              )}
+        <div
+          ref={frameRef}
+          onPointerDown={() => {
+            setSelectedId(null);
+            setEditingId(null);
+          }}
+          className="relative mx-auto aspect-video w-full max-w-4xl overflow-hidden rounded-card shadow-card ring-1 ring-border"
+          style={{
+            containerType: "size",
+            background: config.background ?? "#ffffff",
+          }}
+        >
+          {elements.length === 0 && (
+            <div
+              className="absolute inset-0 flex items-center justify-center text-neutral-400"
+              style={{ fontSize: cqw(28) }}
+            >
+              Přidej nadpis nebo text tlačítky nahoře.
             </div>
-          );
-        })}
+          )}
+
+          {elements.map((el) => {
+            const isSelected = el.id === selectedId;
+            const isEditing = el.id === editingId;
+            return (
+              <div
+                key={el.id}
+                className={`absolute ${isSelected ? "outline-2 outline-offset-2 outline-brand rounded-sm" : ""}`}
+                style={{
+                  left: cqw(el.x),
+                  top: cqh(el.y),
+                  maxWidth: cqw(SLIDE_W - el.x),
+                  width: isEditing ? cqw(SLIDE_W - el.x) : undefined,
+                  fontSize: cqw(el.fontSize),
+                  ...elementStyle(el),
+                }}
+              >
+                {isEditing ? (
+                  <textarea
+                    autoFocus
+                    value={el.text}
+                    maxLength={el.kind === "heading" ? HEADING_MAX : BODY_MAX}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onChange={(e) =>
+                      patchElement(el.id, { text: e.target.value })
+                    }
+                    onBlur={() => setEditingId(null)}
+                    rows={1}
+                    className={`block w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-[color:inherit] outline-none [font-size:inherit] [font-weight:inherit] [text-align:inherit] ${elementClass(el.kind)}`}
+                  />
+                ) : (
+                  <div
+                    onPointerDown={(e) => startInteraction("move", el, e)}
+                    onDoubleClick={() => {
+                      setSelectedId(el.id);
+                      setEditingId(el.id);
+                    }}
+                    className={`cursor-move whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
+                  >
+                    {el.text ||
+                      (el.kind === "heading" ? "Nadpis" : "Hlavní text")}
+                  </div>
+                )}
+
+                {isSelected && !isEditing && (
+                  <div
+                    onPointerDown={(e) => startInteraction("resize", el, e)}
+                    title="Táhni pro změnu velikosti textu"
+                    className="absolute h-3.5 w-3.5 cursor-nwse-resize rounded-full border-2 border-brand bg-surface shadow-sm transition-transform duration-150 hover:scale-125"
+                    style={{ right: cqw(-6), bottom: cqh(-6) }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
+
+      <SlideSettingsPanel
+        config={config}
+        selected={selected}
+        onPatchElement={(patch) => {
+          if (selected) patchElement(selected.id, patch);
+        }}
+        onPatchConfig={(patch) => onChange({ ...config, ...patch })}
+        onDeleteElement={() => {
+          if (selected) deleteElement(selected.id);
+        }}
+      />
     </div>
   );
 }
