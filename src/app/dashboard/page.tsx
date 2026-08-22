@@ -35,7 +35,9 @@ export default async function DashboardPage() {
       <main className="flex-1 px-6 py-8">
         <div className="mx-auto w-full max-w-5xl">
           <div className="mb-5 flex items-center justify-end gap-3">
-            <span className="text-sm font-medium text-muted">{displayName}</span>
+            <span className="text-sm font-medium text-muted">
+              {displayName}
+            </span>
             <form action={signOut}>
               <button type="submit" className="btn btn-secondary btn-sm">
                 Odhlásit

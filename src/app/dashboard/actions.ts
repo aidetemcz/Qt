@@ -73,10 +73,7 @@ export async function renamePresentation(id: string, title: string) {
 
 export async function deletePresentation(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("presentations")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("presentations").delete().eq("id", id);
   if (error) {
     throw new Error(`Failed to delete presentation: ${error.message}`);
   }

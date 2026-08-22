@@ -33,9 +33,24 @@ export interface SlideImage {
   fit?: SlideImageFit;
 }
 
+/** One answer option of a quiz slide. */
+export interface QuizAnswer {
+  id: string;
+  text: string;
+  correct?: boolean;
+}
+
+/** Quiz slide content: one question with up to four answer options. */
+export interface SlideQuiz {
+  question: string;
+  answers: QuizAnswer[];
+}
+
 export interface SlideConfig {
   /** Freely positioned text boxes (current model). */
   elements?: SlideElement[];
+  /** Quiz content; present only on quiz slides. */
+  quiz?: SlideQuiz;
   /** Slide background colour set from the settings panel. */
   background?: string;
   /** Full-bleed image behind the text boxes. */

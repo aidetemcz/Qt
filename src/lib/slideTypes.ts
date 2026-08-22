@@ -38,8 +38,18 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     description: "Otázka se čtyřmi odpověďmi",
     group: "Kvíz",
     glyph: "◆",
-    available: false,
-    initialConfig: { elements: [] },
+    available: true,
+    initialConfig: {
+      quiz: {
+        question: "",
+        answers: [
+          { id: "a", text: "" },
+          { id: "b", text: "" },
+          { id: "c", text: "" },
+          { id: "d", text: "" },
+        ],
+      },
+    },
   },
   {
     id: "truefalse",

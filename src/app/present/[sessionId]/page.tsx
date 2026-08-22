@@ -17,7 +17,9 @@ export default async function PresentPage({
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, presentation_id, code, current_position, is_active, created_at")
+    .select(
+      "id, presentation_id, code, current_position, is_active, created_at",
+    )
     .eq("id", sessionId)
     .maybeSingle<Session>();
 

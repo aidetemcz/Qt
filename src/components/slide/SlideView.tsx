@@ -1,8 +1,37 @@
-import type { SlideConfig, SlideElement } from "@/lib/presentations";
+import type {
+  QuizAnswer,
+  SlideConfig,
+  SlideElement,
+  SlideQuiz,
+} from "@/lib/presentations";
 
 /** Character limits so authored text stays within the slide frame. */
 export const HEADING_MAX = 120;
 export const BODY_MAX = 800;
+export const QUESTION_MAX = 200;
+export const ANSWER_MAX = 80;
+export const QUIZ_MAX_ANSWERS = 4;
+
+/** Colour and shape of each answer slot, shared by the editor and the view. */
+export const QUIZ_ANSWER_STYLES = [
+  { color: "#dc5b5b", glyph: "▲" },
+  { color: "#5f8794", glyph: "◆" },
+  { color: "#d9913d", glyph: "●" },
+  { color: "#4f8f60", glyph: "■" },
+];
+
+/** An empty quiz, used when a quiz slide has no content yet. */
+export function emptyQuiz(): SlideQuiz {
+  return {
+    question: "",
+    answers: ["a", "b", "c", "d"].map((id) => ({ id, text: "" })),
+  };
+}
+
+/** The answer slots of a quiz, capped at the number of styled slots. */
+export function getQuizAnswers(quiz: SlideQuiz): QuizAnswer[] {
+  return (quiz.answers ?? []).slice(0, QUIZ_MAX_ANSWERS);
+}
 
 /** Font size bounds, in px on the 960×540 slide base. */
 export const MIN_SIZE = 10;
@@ -77,12 +106,86 @@ export function elementStyle(el: SlideElement): React.CSSProperties {
 }
 
 /**
+ * Read-only rendering of a quiz: the question on a card, the answers in a grid
+ * of coloured tiles. Empty answer slots are left out, so a two-option question
+ * shows two tiles. Which answer is correct stays hidden unless `showCorrect`.
+ */
+function QuizLayer({
+  quiz,
+  showCorrect,
+}: {
+  quiz: SlideQuiz;
+  showCorrect: boolean;
+}) {
+  const answers = getQuizAnswers(quiz).filter((a) => a.text.trim());
+  return (
+    <div
+      className="absolute inset-0 flex flex-col"
+      style={{ padding: cqw(36), gap: cqh(24) }}
+    >
+      <div
+        className="flex flex-1 items-center justify-center rounded-2xl bg-white/95 text-center font-bold text-[#241d1a] shadow-sm"
+        style={{ padding: cqw(24), fontSize: cqw(46), lineHeight: 1.15 }}
+      >
+        <span className="line-clamp-3 break-words">
+          {quiz.question || "Otázka"}
+        </span>
+      </div>
+
+      {answers.length > 0 && (
+        <div
+          className="grid grid-cols-2"
+          style={{
+            gap: cqw(14),
+            height: cqh(210),
+            gridTemplateRows: answers.length > 2 ? "1fr 1fr" : "1fr",
+          }}
+        >
+          {answers.map((answer, index) => {
+            const style = QUIZ_ANSWER_STYLES[index % QUIZ_ANSWER_STYLES.length];
+            return (
+              <div
+                key={answer.id}
+                className="flex items-center overflow-hidden rounded-xl font-semibold text-white"
+                style={{
+                  background: style.color,
+                  gap: cqw(12),
+                  padding: cqw(14),
+                  fontSize: cqw(26),
+                  // Once revealed, the wrong options step back.
+                  opacity: showCorrect && !answer.correct ? 0.4 : 1,
+                }}
+              >
+                <span style={{ fontSize: cqw(22) }}>{style.glyph}</span>
+                <span className="min-w-0 break-words">{answer.text}</span>
+                {showCorrect && answer.correct && (
+                  <span className="ml-auto" style={{ fontSize: cqw(26) }}>
+                    ✓
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * Canonical read-only rendering of a slide. Each text box is absolutely
  * positioned in a 16:9 query container, with position, width and font size in
  * container-query units so the slide scales identically wherever it is shown.
  * Long words wrap and overflow is clipped, so text can never escape the frame.
  */
-export default function SlideView({ config }: { config: SlideConfig }) {
+export default function SlideView({
+  config,
+  showCorrect = false,
+}: {
+  config: SlideConfig;
+  /** Reveal which quiz answer is correct. Off everywhere but the editor. */
+  showCorrect?: boolean;
+}) {
   const elements = getElements(config);
   return (
     <div
@@ -102,7 +205,10 @@ export default function SlideView({ config }: { config: SlideConfig }) {
           style={{ objectFit: config.image.fit ?? "cover" }}
         />
       )}
-      {elements.length === 0 && !config.image?.src && (
+      {config.quiz && (
+        <QuizLayer quiz={config.quiz} showCorrect={showCorrect} />
+      )}
+      {!config.quiz && elements.length === 0 && !config.image?.src && (
         <div
           className="absolute inset-0 flex items-center justify-center text-neutral-400"
           style={{ fontSize: cqw(28) }}

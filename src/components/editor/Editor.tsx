@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { renamePresentation } from "@/app/dashboard/actions";
+import QuizEditor from "@/components/editor/QuizEditor";
 import SlideEditorCanvas from "@/components/editor/SlideEditorCanvas";
 import SlideTypePicker from "@/components/editor/SlideTypePicker";
 import SlideView, { getElements } from "@/components/slide/SlideView";
@@ -24,6 +25,9 @@ const saveLabels: Record<SaveState, string> = {
 };
 
 function snippet(config: SlideConfig): string {
+  if (config.quiz) {
+    return config.quiz.question.trim() || "Kvízová otázka";
+  }
   const text = getElements(config)
     .map((el) => el.text)
     .join(" ")
@@ -124,10 +128,7 @@ export default function Editor({
     clearTimeout(saveTimers.current.get(slide.id));
     saveTimers.current.delete(slide.id);
     setSaveState("saving");
-    const { error } = await supabase
-      .from("slides")
-      .delete()
-      .eq("id", slide.id);
+    const { error } = await supabase.from("slides").delete().eq("id", slide.id);
     if (error) {
       setSaveState("error");
       return;
@@ -299,11 +300,19 @@ export default function Editor({
               />
             </div>
           ) : selected ? (
-            <SlideEditorCanvas
-              key={selected.id}
-              config={selected.config}
-              onChange={(config) => updateConfig(selected.id, config)}
-            />
+            selected.config.quiz ? (
+              <QuizEditor
+                key={selected.id}
+                config={selected.config}
+                onChange={(config) => updateConfig(selected.id, config)}
+              />
+            ) : (
+              <SlideEditorCanvas
+                key={selected.id}
+                config={selected.config}
+                onChange={(config) => updateConfig(selected.id, config)}
+              />
+            )
           ) : (
             <div className="mx-auto mt-20 text-center">
               <p className="text-base font-semibold text-ink">

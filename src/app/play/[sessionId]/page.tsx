@@ -19,7 +19,9 @@ export default async function PlayPage({
   // on the current slide immediately, not only after the next realtime event.
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, presentation_id, code, current_position, is_active, created_at")
+    .select(
+      "id, presentation_id, code, current_position, is_active, created_at",
+    )
     .eq("id", sessionId)
     .maybeSingle<Session>();
 

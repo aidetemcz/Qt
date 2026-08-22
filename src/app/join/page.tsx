@@ -61,9 +61,7 @@ export default function JoinPage() {
             placeholder="000000"
             className="input bg-sunken py-5 text-center font-mono text-3xl font-bold tracking-[0.35em] text-ink"
           />
-          {error && (
-            <p className="text-center text-sm text-red-600">{error}</p>
-          )}
+          {error && <p className="text-center text-sm text-red-600">{error}</p>}
           <button
             type="submit"
             disabled={loading || code.length < 6}

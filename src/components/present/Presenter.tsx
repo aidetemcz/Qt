@@ -21,10 +21,15 @@ export default function Presenter({
   // renders whatever value the database last confirmed.
   const [position, setPosition] = useState(session.current_position);
   const [isPending, setIsPending] = useState(false);
+  // Which quiz slide has had its answer revealed. Tied to the slide id, so
+  // moving away and back hides it again.
+  const [revealedId, setRevealedId] = useState<string | null>(null);
 
   const total = slides.length;
   const clamped = Math.min(Math.max(position, 0), Math.max(total - 1, 0));
   const slide = slides[clamped];
+  const isQuiz = !!slide?.config.quiz;
+  const revealed = !!slide && revealedId === slide.id;
 
   async function move(delta: -1 | 1) {
     const target = clamped + delta;
@@ -98,7 +103,7 @@ export default function Presenter({
             key={slide.id}
             className="animate-fade-in w-full max-w-5xl rounded-panel shadow-pop"
           >
-            <SlideView config={slide.config} />
+            <SlideView config={slide.config} showCorrect={revealed} />
           </div>
         ) : (
           <p className="text-lg text-white/50">
@@ -119,6 +124,15 @@ export default function Presenter({
         <span className="min-w-[8rem] text-center font-mono text-xs tracking-widest text-white/45 uppercase">
           {total === 0 ? "0 / 0" : `${clamped + 1} / ${total}`}
         </span>
+        {isQuiz && (
+          <button
+            type="button"
+            onClick={() => setRevealedId(revealed ? null : slide.id)}
+            className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-white/15 motion-safe:hover:-translate-y-0.5"
+          >
+            {revealed ? "Skrýt odpověď" : "Ukázat odpověď"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => move(1)}
