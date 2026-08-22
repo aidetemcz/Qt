@@ -79,4 +79,6 @@ export interface Session {
   current_position: number;
   is_active: boolean;
   created_at: string;
+  /** Odkrytá správná odpověď u kvízu. Chybí, dokud neproběhne migrace. */
+  reveal_answer?: boolean;
 }

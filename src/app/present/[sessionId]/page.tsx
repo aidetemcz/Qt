@@ -15,11 +15,11 @@ export default async function PresentPage({
   const { sessionId } = await params;
   const supabase = await createClient();
 
+  // Hvězdička schválně: reveal_answer přibyl později, a kdyby se vyjmenoval
+  // před spuštěním migrace, celý dotaz by selhal a prezentace by zmizela.
   const { data: session } = await supabase
     .from("sessions")
-    .select(
-      "id, presentation_id, code, current_position, is_active, created_at",
-    )
+    .select("*")
     .eq("id", sessionId)
     .maybeSingle<Session>();
 

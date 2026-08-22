@@ -16,6 +16,8 @@ export default function Player({
   // Seed from the database value (server-loaded) so a late joiner is already on
   // the right slide; realtime updates take over from there.
   const [position, setPosition] = useState(session.current_position);
+  // Odkrytí správné odpovědi řídí přednášející; sem přiteče stejným odběrem.
+  const [revealed, setRevealed] = useState(!!session.reveal_answer);
 
   useEffect(() => {
     const channel = supabase
@@ -29,11 +31,14 @@ export default function Player({
           filter: `id=eq.${session.id}`,
         },
         (payload) => {
-          const next = (payload.new as { current_position?: number })
-            .current_position;
-          if (typeof next === "number") {
-            setPosition(next);
+          const next = payload.new as {
+            current_position?: number;
+            reveal_answer?: boolean;
+          };
+          if (typeof next.current_position === "number") {
+            setPosition(next.current_position);
           }
+          setRevealed(!!next.reveal_answer);
         },
       )
       .subscribe();
@@ -63,7 +68,7 @@ export default function Player({
             key={slide.id}
             className="animate-fade-in w-full max-w-4xl rounded-panel shadow-pop"
           >
-            <SlideView config={slide.config} />
+            <SlideView config={slide.config} showCorrect={revealed} />
           </div>
         ) : (
           <p className="text-center text-white/50">

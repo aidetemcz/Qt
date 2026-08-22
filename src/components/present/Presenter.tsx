@@ -21,15 +21,15 @@ export default function Presenter({
   // renders whatever value the database last confirmed.
   const [position, setPosition] = useState(session.current_position);
   const [isPending, setIsPending] = useState(false);
-  // Which quiz slide has had its answer revealed. Tied to the slide id, so
-  // moving away and back hides it again.
-  const [revealedId, setRevealedId] = useState<string | null>(null);
+  // Odkrytí odpovědi je uložené v session, ne jen tady — jinak by ho
+  // účastníci na /play nikdy nedostali.
+  const [revealed, setRevealed] = useState(!!session.reveal_answer);
+  const [revealError, setRevealError] = useState(false);
 
   const total = slides.length;
   const clamped = Math.min(Math.max(position, 0), Math.max(total - 1, 0));
   const slide = slides[clamped];
   const isQuiz = !!slide?.config.quiz;
-  const revealed = !!slide && revealedId === slide.id;
 
   async function move(delta: -1 | 1) {
     const target = clamped + delta;
@@ -49,6 +49,33 @@ export default function Presenter({
     }
     // Follow the value the database returned, not an optimistic guess.
     setPosition(data.current_position);
+    // Nový slide začíná zase zakrytý. Zvlášť od posunu pozice, aby přechod
+    // mezi slidy fungoval i na databázi, kde sloupec ještě nepřibyl.
+    if (revealed) {
+      setRevealed(false);
+      void supabase
+        .from("sessions")
+        .update({ reveal_answer: false })
+        .eq("id", session.id);
+    }
+  }
+
+  async function toggleReveal() {
+    const next = !revealed;
+    setIsPending(true);
+    const { data, error } = await supabase
+      .from("sessions")
+      .update({ reveal_answer: next })
+      .eq("id", session.id)
+      .select("reveal_answer")
+      .single<{ reveal_answer: boolean }>();
+    setIsPending(false);
+    if (error || !data) {
+      setRevealError(true);
+      return;
+    }
+    setRevealError(false);
+    setRevealed(data.reveal_answer);
   }
 
   async function endPresentation() {
@@ -127,8 +154,9 @@ export default function Presenter({
         {isQuiz && (
           <button
             type="button"
-            onClick={() => setRevealedId(revealed ? null : slide.id)}
-            className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-white/15 motion-safe:hover:-translate-y-0.5"
+            onClick={toggleReveal}
+            disabled={isPending}
+            className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-white/15 disabled:opacity-40 motion-safe:hover:-translate-y-0.5"
           >
             {revealed ? "Skrýt odpověď" : "Ukázat odpověď"}
           </button>
@@ -142,6 +170,14 @@ export default function Presenter({
           Další →
         </button>
       </footer>
+
+      {revealError && (
+        <p className="relative z-10 px-6 pb-5 text-center text-xs text-white/60">
+          Odpověď se nepodařilo odkrýt. V Supabase chybí sloupec
+          <code className="mx-1 rounded bg-white/10 px-1">reveal_answer</code>—
+          spusť SQL ze souboru supabase/add_reveal_answer.sql.
+        </p>
+      )}
     </div>
   );
 }
