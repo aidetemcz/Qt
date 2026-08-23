@@ -18,6 +18,8 @@ export default function Player({
   const [position, setPosition] = useState(session.current_position);
   // Odkrytí správné odpovědi řídí přednášející; sem přiteče stejným odběrem.
   const [revealed, setRevealed] = useState(!!session.reveal_answer);
+  // Bez migrace sloupec chybí — pak se čeká na nic a bereme to jako spuštěné.
+  const [started, setStarted] = useState(session.started ?? true);
 
   useEffect(() => {
     const channel = supabase
@@ -34,9 +36,13 @@ export default function Player({
           const next = payload.new as {
             current_position?: number;
             reveal_answer?: boolean;
+            started?: boolean;
           };
           if (typeof next.current_position === "number") {
             setPosition(next.current_position);
+          }
+          if (typeof next.started === "boolean") {
+            setStarted(next.started);
           }
           setRevealed(!!next.reveal_answer);
         },
@@ -63,7 +69,14 @@ export default function Player({
         }}
       />
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
-        {slide ? (
+        {!started ? (
+          <div className="animate-fade-in text-center">
+            <p className="text-2xl font-extrabold text-white">Jsi ve hře!</p>
+            <p className="mt-3 text-sm text-white/50">
+              Počkej, až přednášející prezentaci spustí.
+            </p>
+          </div>
+        ) : slide ? (
           <div
             key={slide.id}
             className="animate-fade-in w-full max-w-4xl rounded-panel shadow-pop"
@@ -77,9 +90,11 @@ export default function Player({
         )}
       </main>
       <footer className="relative z-10 flex items-center justify-center gap-3 px-5 py-5 text-xs">
-        <span className="font-mono tracking-widest text-white/45">
-          {total > 0 ? `${clamped + 1} / ${total}` : "0 / 0"}
-        </span>
+        {started && (
+          <span className="font-mono tracking-widest text-white/45">
+            {total > 0 ? `${clamped + 1} / ${total}` : "0 / 0"}
+          </span>
+        )}
         <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono tracking-[0.2em] text-white/60">
           {session.code}
         </span>

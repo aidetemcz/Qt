@@ -81,4 +81,6 @@ export interface Session {
   created_at: string;
   /** Odkrytá správná odpověď u kvízu. Chybí, dokud neproběhne migrace. */
   reveal_answer?: boolean;
+  /** Prezentace běží; dokud ne, je lobby. Chybí, dokud neproběhne migrace. */
+  started?: boolean;
 }
