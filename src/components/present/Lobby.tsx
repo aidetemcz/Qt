@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Participant } from "@/lib/presentations";
 
 /**
  * Čekárna před spuštěním prezentace: velký kód místnosti, prostor pro
@@ -8,10 +9,12 @@ import { useEffect, useState } from "react";
  */
 export default function Lobby({
   code,
+  participants,
   onStart,
   isPending,
 }: {
   code: string;
+  participants: Participant[];
   onStart: () => void;
   isPending: boolean;
 }) {
@@ -30,10 +33,28 @@ export default function Lobby({
         </p>
       </div>
 
-      <div className="w-full max-w-3xl rounded-panel border border-dashed border-white/15 bg-white/5 px-8 py-14 text-center">
-        <p className="text-sm text-white/45">
-          Tady se objeví připojení účastníci.
+      <div className="w-full max-w-3xl rounded-panel border border-white/10 bg-white/5 p-6">
+        <p className="mb-4 text-center text-xs font-bold tracking-[0.16em] text-white/45 uppercase">
+          {participants.length === 0
+            ? "Zatím nikdo"
+            : `${participants.length} ${participants.length === 1 ? "připojený" : participants.length < 5 ? "připojení" : "připojených"}`}
         </p>
+        {participants.length === 0 ? (
+          <p className="py-6 text-center text-sm text-white/40">
+            Tady se objeví připojení účastníci.
+          </p>
+        ) : (
+          <ul className="flex flex-wrap justify-center gap-2">
+            {participants.map((participant) => (
+              <li
+                key={participant.id}
+                className="animate-pop rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white"
+              >
+                {participant.nickname}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <button

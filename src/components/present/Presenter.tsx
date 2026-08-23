@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Lobby from "@/components/present/Lobby";
 import SlideView from "@/components/slide/SlideView";
-import type { Session, Slide } from "@/lib/presentations";
+import type { Answer, Participant, Session, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
 
 export default function Presenter({
@@ -30,11 +30,91 @@ export default function Presenter({
   // aby se prezentace nedala zaseknout.
   const [started, setStarted] = useState(session.started ?? false);
   const [startError, setStartError] = useState(false);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+
+  // Účastníci a jejich hlasy: jednou se načtou (kvůli reloadu uprostřed hry)
+  // a dál přibývají realtimem.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const [participantResult, answerResult] = await Promise.all([
+        supabase
+          .from("participants")
+          .select("*")
+          .eq("session_id", session.id)
+          .order("created_at", { ascending: true })
+          .returns<Participant[]>(),
+        supabase
+          .from("answers")
+          .select("*")
+          .eq("session_id", session.id)
+          .returns<Answer[]>(),
+      ]);
+      if (cancelled) {
+        return;
+      }
+      setParticipants(participantResult.data ?? []);
+      setAnswers(answerResult.data ?? []);
+    }
+    load();
+
+    const channel = supabase
+      .channel(`present-session-${session.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "participants",
+          filter: `session_id=eq.${session.id}`,
+        },
+        (payload) =>
+          setParticipants((prev) => {
+            const next = payload.new as Participant;
+            return prev.some((p) => p.id === next.id) ? prev : [...prev, next];
+          }),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "answers",
+          filter: `session_id=eq.${session.id}`,
+        },
+        (payload) =>
+          setAnswers((prev) => {
+            const next = payload.new as Answer;
+            return prev.some((a) => a.id === next.id) ? prev : [...prev, next];
+          }),
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, session.id]);
 
   const total = slides.length;
   const clamped = Math.min(Math.max(position, 0), Math.max(total - 1, 0));
   const slide = slides[clamped];
   const isQuiz = !!slide?.config.quiz;
+
+  // Hlasy k právě promítanému slidu.
+  const slideAnswers = useMemo(
+    () => (slide ? answers.filter((a) => a.slide_id === slide.id) : []),
+    [answers, slide],
+  );
+  const answerCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const answer of slideAnswers) {
+      counts[answer.answer_id] = (counts[answer.answer_id] ?? 0) + 1;
+    }
+    return counts;
+  }, [slideAnswers]);
 
   async function move(delta: -1 | 1) {
     const target = clamped + delta;
@@ -147,6 +227,7 @@ export default function Presenter({
       {!started ? (
         <Lobby
           code={session.code}
+          participants={participants}
           onStart={startPresenting}
           isPending={isPending}
         />
@@ -158,7 +239,11 @@ export default function Presenter({
                 key={slide.id}
                 className="animate-fade-in w-full max-w-5xl rounded-panel shadow-pop"
               >
-                <SlideView config={slide.config} showCorrect={revealed} />
+                <SlideView
+                  config={slide.config}
+                  showCorrect={revealed}
+                  answerCounts={isQuiz ? answerCounts : undefined}
+                />
               </div>
             ) : (
               <p className="text-lg text-white/50">
@@ -178,6 +263,11 @@ export default function Presenter({
             </button>
             <span className="min-w-[8rem] text-center font-mono text-xs tracking-widest text-white/45 uppercase">
               {total === 0 ? "0 / 0" : `${clamped + 1} / ${total}`}
+              {isQuiz && (
+                <span className="mt-1 block normal-case">
+                  {slideAnswers.length} / {participants.length} odpovědělo
+                </span>
+              )}
             </span>
             {isQuiz && (
               <button

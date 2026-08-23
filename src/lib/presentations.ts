@@ -72,6 +72,25 @@ export interface Slide {
   config: SlideConfig;
 }
 
+/** Účastník připojený do session. Neregistrovaný, drží se jen přezdívkou. */
+export interface Participant {
+  id: string;
+  session_id: string;
+  nickname: string;
+  created_at: string;
+}
+
+/** Jeden hlas účastníka na kvízovém slidu. */
+export interface Answer {
+  id: string;
+  session_id: string;
+  slide_id: string;
+  participant_id: string;
+  /** id odpovědi z config.quiz.answers */
+  answer_id: string;
+  created_at: string;
+}
+
 export interface Session {
   id: string;
   presentation_id: string;

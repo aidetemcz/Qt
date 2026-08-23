@@ -113,9 +113,11 @@ export function elementStyle(el: SlideElement): React.CSSProperties {
 function QuizLayer({
   quiz,
   showCorrect,
+  answerCounts,
 }: {
   quiz: SlideQuiz;
   showCorrect: boolean;
+  answerCounts?: Record<string, number>;
 }) {
   const answers = getQuizAnswers(quiz).filter((a) => a.text.trim());
   return (
@@ -158,11 +160,25 @@ function QuizLayer({
               >
                 <span style={{ fontSize: cqw(22) }}>{style.glyph}</span>
                 <span className="min-w-0 break-words">{answer.text}</span>
-                {showCorrect && answer.correct && (
-                  <span className="ml-auto" style={{ fontSize: cqw(26) }}>
-                    ✓
-                  </span>
-                )}
+                <span
+                  className="ml-auto flex shrink-0 items-center"
+                  style={{ gap: cqw(8) }}
+                >
+                  {answerCounts && (
+                    <span
+                      className="rounded-full bg-black/25 font-bold"
+                      style={{
+                        padding: `${cqh(4)} ${cqw(12)}`,
+                        fontSize: cqw(22),
+                      }}
+                    >
+                      {answerCounts[answer.id] ?? 0}
+                    </span>
+                  )}
+                  {showCorrect && answer.correct && (
+                    <span style={{ fontSize: cqw(26) }}>✓</span>
+                  )}
+                </span>
               </div>
             );
           })}
@@ -181,10 +197,13 @@ function QuizLayer({
 export default function SlideView({
   config,
   showCorrect = false,
+  answerCounts,
 }: {
   config: SlideConfig;
   /** Reveal which quiz answer is correct. Off everywhere but the editor. */
   showCorrect?: boolean;
+  /** Počty hlasů podle id odpovědi. Ukazuje je jen přednášející. */
+  answerCounts?: Record<string, number>;
 }) {
   const elements = getElements(config);
   return (
@@ -206,7 +225,11 @@ export default function SlideView({
         />
       )}
       {config.quiz && (
-        <QuizLayer quiz={config.quiz} showCorrect={showCorrect} />
+        <QuizLayer
+          quiz={config.quiz}
+          showCorrect={showCorrect}
+          answerCounts={answerCounts}
+        />
       )}
       {!config.quiz && elements.length === 0 && !config.image?.src && (
         <div
