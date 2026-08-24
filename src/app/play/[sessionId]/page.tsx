@@ -7,6 +7,33 @@ export const metadata = {
   title: "Qt",
 };
 
+/**
+ * Odstraní z kvízů příznak správné odpovědi. Účastník ji nesmí mít
+ * v prohlížeči dřív, než ji přednášející odkryje — po odkrytí si ji Player
+ * vyzvedne z /api/reveal.
+ */
+function withoutCorrect(slides: Slide[]): Slide[] {
+  return slides.map((slide) => {
+    const quiz = slide.config.quiz;
+    if (!quiz) {
+      return slide;
+    }
+    return {
+      ...slide,
+      config: {
+        ...slide.config,
+        quiz: {
+          ...quiz,
+          answers: quiz.answers.map((answer) => ({
+            id: answer.id,
+            text: answer.text,
+          })),
+        },
+      },
+    };
+  });
+}
+
 export default async function PlayPage({
   params,
 }: {
@@ -34,5 +61,5 @@ export default async function PlayPage({
     .order("position", { ascending: true })
     .returns<Slide[]>();
 
-  return <Player session={session} slides={slides ?? []} />;
+  return <Player session={session} slides={withoutCorrect(slides ?? [])} />;
 }

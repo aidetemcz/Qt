@@ -55,6 +55,8 @@ export default function Player({
   // Vybraná odpověď podle slidu, aby se nedalo hlasovat dvakrát.
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
+  // Správné odpovědi dorazí až po odkrytí, ze serveru — v configu je nemáme.
+  const [correctIds, setCorrectIds] = useState<string[]>([]);
 
   // localStorage se čte až po připojení komponenty, jinak by se rozešel se
   // serverovým renderem.
@@ -97,6 +99,29 @@ export default function Player({
   const clamped = Math.min(Math.max(position, 0), Math.max(total - 1, 0));
   const slide = slides[clamped];
   const quiz = slide?.config.quiz;
+
+  // Po odkrytí si správnou odpověď vyzvedneme; server ji vydá jen pro právě
+  // promítaný slide a jen když je opravdu odkrytá.
+  useEffect(() => {
+    if (!revealed || !slide) {
+      setCorrectIds([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/reveal/${session.id}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { slideId: string | null; correct: string[] } | null) => {
+        if (!cancelled && data && data.slideId === slide.id) {
+          setCorrectIds(data.correct);
+        }
+      })
+      .catch(() => {
+        // Bez odpovědi se prostě neukáže, co bylo správně.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [revealed, slide, session.id]);
 
   async function join() {
     const trimmed = nickname.trim();
@@ -207,9 +232,10 @@ export default function Player({
                   const style =
                     QUIZ_ANSWER_STYLES[index % QUIZ_ANSWER_STYLES.length];
                   const mine = myAnswer === answer.id;
+                  const isCorrect = correctIds.includes(answer.id);
                   // Po odeslání se ostatní ztlumí; po odkrytí i špatné.
-                  const dimmed = revealed
-                    ? !answer.correct
+                  const dimmed = correctIds.length
+                    ? !isCorrect
                     : !!myAnswer && !mine;
                   return (
                     <button
@@ -226,18 +252,16 @@ export default function Player({
                     >
                       <span aria-hidden>{style.glyph}</span>
                       <span className="min-w-0 break-words">{answer.text}</span>
-                      {revealed && answer.correct && (
-                        <span className="ml-auto shrink-0">✓</span>
-                      )}
+                      {isCorrect && <span className="ml-auto shrink-0">✓</span>}
                     </button>
                   );
                 })}
             </div>
 
             <p className="mt-5 text-center text-sm text-white/60">
-              {revealed
+              {correctIds.length
                 ? myAnswer
-                  ? getQuizAnswers(quiz).find((a) => a.id === myAnswer)?.correct
+                  ? correctIds.includes(myAnswer)
                     ? "Správně!"
                     : "Tentokrát vedle."
                   : "Nestihl jsi odpovědět."
