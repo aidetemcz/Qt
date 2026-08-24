@@ -21,16 +21,20 @@ import type { QuizAnswer, SlideConfig, SlideQuiz } from "@/lib/presentations";
  */
 export default function QuestionEditor({
   kind,
+  lockedAnswers = false,
   config,
   onChange,
 }: {
   kind: InteractionKind;
+  /** Pravda/Lež: možnosti jsou dané, mění se jen ta správná. */
+  lockedAnswers?: boolean;
   config: SlideConfig;
   onChange: (config: SlideConfig) => void;
 }) {
   const isQuiz = kind === "quiz";
   const quiz = (isQuiz ? config.quiz : config.poll) ?? emptyQuiz();
-  const answers = getQuizAnswers(quiz);
+  // U pevných možností se prázdné sloty nedoplňují.
+  const answers = lockedAnswers ? (quiz.answers ?? []) : getQuizAnswers(quiz);
 
   function patchQuiz(patch: Partial<SlideQuiz>) {
     const next = { ...quiz, ...patch };
@@ -41,14 +45,26 @@ export default function QuestionEditor({
       answers: answers.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     });
   }
+  function toggleCorrect(id: string) {
+    // U Pravda/Lež platí právě jedna možnost, jinde jich může být víc.
+    if (lockedAnswers) {
+      patchQuiz({
+        answers: answers.map((a) => ({ ...a, correct: a.id === id })),
+      });
+      return;
+    }
+    patchAnswer(id, { correct: !answers.find((a) => a.id === id)?.correct });
+  }
 
   const filled = answers.filter((a) => a.text.trim());
   const hasCorrect = filled.some((a) => a.correct);
   const warning =
-    filled.length < 2
+    !lockedAnswers && filled.length < 2
       ? "Vyplň aspoň dvě možnosti — prázdné se v prezentaci nezobrazí."
       : isQuiz && !hasCorrect
-        ? "Označ kolečkem, která odpověď je správná."
+        ? lockedAnswers
+          ? "Označ kolečkem, jestli tvrzení platí."
+          : "Označ kolečkem, která odpověď je správná."
         : null;
 
   return (
@@ -56,9 +72,11 @@ export default function QuestionEditor({
       <div className="flex flex-1 flex-col gap-3 overflow-auto p-4 md:p-8">
         <div className="card mx-auto flex w-full max-w-4xl flex-wrap items-center gap-2 p-3">
           <span className="text-xs text-muted">
-            {isQuiz
-              ? "Napiš otázku a odpovědi. Správnou označ kolečkem vpravo."
-              : "Napiš otázku a možnosti. Anketa nemá správnou odpověď, jen ukáže, jak kdo hlasoval."}
+            {lockedAnswers
+              ? "Napiš tvrzení a kolečkem označ, jestli platí."
+              : isQuiz
+                ? "Napiš otázku a odpovědi. Správnou označ kolečkem vpravo."
+                : "Napiš otázku a možnosti. Anketa nemá správnou odpověď, jen ukáže, jak kdo hlasoval."}
           </span>
         </div>
 
@@ -88,8 +106,8 @@ export default function QuestionEditor({
               value={quiz.question}
               maxLength={QUESTION_MAX}
               onChange={(e) => patchQuiz({ question: e.target.value })}
-              placeholder="Napiš otázku"
-              aria-label="Otázka"
+              placeholder={lockedAnswers ? "Napiš tvrzení" : "Napiš otázku"}
+              aria-label={lockedAnswers ? "Tvrzení" : "Otázka"}
               className="flex-1 resize-none rounded-2xl bg-white/95 text-center font-bold text-[#241d1a] shadow-sm outline-none placeholder:text-neutral-400 focus:ring-2 focus:ring-brand/40"
               style={{
                 padding: cqw(24),
@@ -103,7 +121,7 @@ export default function QuestionEditor({
               style={{
                 gap: cqw(14),
                 height: cqh(210),
-                gridTemplateRows: "1fr 1fr",
+                gridTemplateRows: answers.length > 2 ? "1fr 1fr" : "1fr",
               }}
             >
               {answers.map((answer, index) => {
@@ -126,24 +144,31 @@ export default function QuestionEditor({
                     >
                       {style.glyph}
                     </span>
-                    <input
-                      type="text"
-                      value={answer.text}
-                      maxLength={ANSWER_MAX}
-                      onChange={(e) =>
-                        patchAnswer(answer.id, { text: e.target.value })
-                      }
-                      placeholder={`${isQuiz ? "Odpověď" : "Možnost"} ${index + 1}`}
-                      aria-label={`${isQuiz ? "Odpověď" : "Možnost"} ${index + 1}`}
-                      className="min-w-0 flex-1 bg-transparent font-semibold text-white outline-none placeholder:text-white/55"
-                      style={{ fontSize: cqw(26) }}
-                    />
+                    {lockedAnswers ? (
+                      <span
+                        className="min-w-0 flex-1 font-semibold text-white"
+                        style={{ fontSize: cqw(26) }}
+                      >
+                        {answer.text}
+                      </span>
+                    ) : (
+                      <input
+                        type="text"
+                        value={answer.text}
+                        maxLength={ANSWER_MAX}
+                        onChange={(e) =>
+                          patchAnswer(answer.id, { text: e.target.value })
+                        }
+                        placeholder={`${isQuiz ? "Odpověď" : "Možnost"} ${index + 1}`}
+                        aria-label={`${isQuiz ? "Odpověď" : "Možnost"} ${index + 1}`}
+                        className="min-w-0 flex-1 bg-transparent font-semibold text-white outline-none placeholder:text-white/55"
+                        style={{ fontSize: cqw(26) }}
+                      />
+                    )}
                     {isQuiz && (
                       <button
                         type="button"
-                        onClick={() =>
-                          patchAnswer(answer.id, { correct: !answer.correct })
-                        }
+                        onClick={() => toggleCorrect(answer.id)}
                         aria-pressed={!!answer.correct}
                         title={
                           answer.correct

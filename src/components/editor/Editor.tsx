@@ -311,6 +311,7 @@ export default function Editor({
               <QuestionEditor
                 key={selected.id}
                 kind={getInteraction(selected.config)!.kind}
+                lockedAnswers={selected.type === "truefalse"}
                 config={selected.config}
                 onChange={(config) => updateConfig(selected.id, config)}
               />

@@ -54,11 +54,20 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
   {
     id: "truefalse",
     label: "Pravda / Lež",
-    description: "Dvě možnosti, rychlé hlasování",
+    description: "Tvrzení a dvě možnosti",
     group: "Kvíz",
     glyph: "◑",
-    available: false,
-    initialConfig: { elements: [] },
+    available: true,
+    // Kvíz s pevnými možnostmi; autor jen vybere, která platí.
+    initialConfig: {
+      quiz: {
+        question: "",
+        answers: [
+          { id: "a", text: "Pravda" },
+          { id: "b", text: "Lež" },
+        ],
+      },
+    },
   },
   {
     id: "poll",
