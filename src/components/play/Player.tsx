@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import SlideView, {
+  getInteraction,
   getQuizAnswers,
   QUIZ_ANSWER_STYLES,
 } from "@/components/slide/SlideView";
@@ -98,10 +99,10 @@ export default function Player({
   const total = slides.length;
   const clamped = Math.min(Math.max(position, 0), Math.max(total - 1, 0));
   const slide = slides[clamped];
-  const quiz = slide?.config.quiz;
+  const quiz = slide ? getInteraction(slide.config) : null;
 
   // Po odkrytí si správnou odpověď vyzvedneme; server ji vydá jen pro právě
-  // promítaný slide a jen když je opravdu odkrytá.
+  // promítaný slide a jen když je opravdu odkrytá. Anketa žádnou nemá.
   useEffect(() => {
     if (!revealed || !slide) {
       setCorrectIds([]);
@@ -266,8 +267,12 @@ export default function Player({
                     : "Tentokrát vedle."
                   : "Nestihl jsi odpovědět."
                 : myAnswer
-                  ? "Odpověď odeslána."
-                  : "Vyber odpověď."}
+                  ? quiz.kind === "quiz"
+                    ? "Odpověď odeslána."
+                    : "Hlas odeslán."
+                  : quiz.kind === "quiz"
+                    ? "Vyber odpověď."
+                    : "Vyber možnost."}
             </p>
           </div>
         ) : slide ? (

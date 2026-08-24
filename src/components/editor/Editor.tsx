@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { renamePresentation } from "@/app/dashboard/actions";
-import QuizEditor from "@/components/editor/QuizEditor";
+import QuestionEditor from "@/components/editor/QuestionEditor";
 import SlideEditorCanvas from "@/components/editor/SlideEditorCanvas";
 import SlideTypePicker from "@/components/editor/SlideTypePicker";
-import SlideView, { getElements } from "@/components/slide/SlideView";
+import SlideView, {
+  getElements,
+  getInteraction,
+} from "@/components/slide/SlideView";
 import {
   SLIDE_TYPES,
   slideTypeById,
@@ -25,8 +28,12 @@ const saveLabels: Record<SaveState, string> = {
 };
 
 function snippet(config: SlideConfig): string {
-  if (config.quiz) {
-    return config.quiz.question.trim() || "Kvízová otázka";
+  const interaction = getInteraction(config);
+  if (interaction) {
+    return (
+      interaction.question.trim() ||
+      (interaction.kind === "quiz" ? "Kvízová otázka" : "Anketa")
+    );
   }
   const text = getElements(config)
     .map((el) => el.text)
@@ -300,9 +307,10 @@ export default function Editor({
               />
             </div>
           ) : selected ? (
-            selected.config.quiz ? (
-              <QuizEditor
+            getInteraction(selected.config) ? (
+              <QuestionEditor
                 key={selected.id}
+                kind={getInteraction(selected.config)!.kind}
                 config={selected.config}
                 onChange={(config) => updateConfig(selected.id, config)}
               />

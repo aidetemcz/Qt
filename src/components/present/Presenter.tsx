@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Lobby from "@/components/present/Lobby";
-import SlideView from "@/components/slide/SlideView";
+import SlideView, { getInteraction } from "@/components/slide/SlideView";
 import type { Answer, Participant, Session, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
 
@@ -101,7 +101,8 @@ export default function Presenter({
   const total = slides.length;
   const clamped = Math.min(Math.max(position, 0), Math.max(total - 1, 0));
   const slide = slides[clamped];
-  const isQuiz = !!slide?.config.quiz;
+  const interaction = slide ? getInteraction(slide.config) : null;
+  const isQuiz = interaction?.kind === "quiz";
 
   // Hlasy k právě promítanému slidu.
   const slideAnswers = useMemo(
@@ -242,7 +243,7 @@ export default function Presenter({
                 <SlideView
                   config={slide.config}
                   showCorrect={revealed}
-                  answerCounts={isQuiz ? answerCounts : undefined}
+                  answerCounts={interaction ? answerCounts : undefined}
                 />
               </div>
             ) : (
@@ -263,7 +264,7 @@ export default function Presenter({
             </button>
             <span className="min-w-[8rem] text-center font-mono text-xs tracking-widest text-white/45 uppercase">
               {total === 0 ? "0 / 0" : `${clamped + 1} / ${total}`}
-              {isQuiz && (
+              {interaction && (
                 <span className="mt-1 block normal-case">
                   {slideAnswers.length} / {participants.length} odpovědělo
                 </span>

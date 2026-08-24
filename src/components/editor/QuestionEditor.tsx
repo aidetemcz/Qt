@@ -7,28 +7,34 @@ import {
   cqw,
   emptyQuiz,
   getQuizAnswers,
+  type InteractionKind,
   QUESTION_MAX,
   QUIZ_ANSWER_STYLES,
 } from "@/components/slide/SlideView";
 import type { QuizAnswer, SlideConfig, SlideQuiz } from "@/lib/presentations";
 
 /**
- * Editor for a quiz slide. The frame mirrors the read-only rendering one to one
- * — same colours, shapes and container-query sizes — so what is authored here
- * is what the room sees. Empty slots stay visible while editing.
+ * Editor otázky — kvízu i ankety. Rám kopíruje výsledné vykreslení jedna ku
+ * jedné (stejné barvy, tvary i velikosti), takže co se tu napíše, to místnost
+ * uvidí. Prázdné sloty jsou při editaci vidět. Anketa je totéž bez označování
+ * správné odpovědi.
  */
-export default function QuizEditor({
+export default function QuestionEditor({
+  kind,
   config,
   onChange,
 }: {
+  kind: InteractionKind;
   config: SlideConfig;
   onChange: (config: SlideConfig) => void;
 }) {
-  const quiz = config.quiz ?? emptyQuiz();
+  const isQuiz = kind === "quiz";
+  const quiz = (isQuiz ? config.quiz : config.poll) ?? emptyQuiz();
   const answers = getQuizAnswers(quiz);
 
   function patchQuiz(patch: Partial<SlideQuiz>) {
-    onChange({ ...config, quiz: { ...quiz, ...patch } });
+    const next = { ...quiz, ...patch };
+    onChange(isQuiz ? { ...config, quiz: next } : { ...config, poll: next });
   }
   function patchAnswer(id: string, patch: Partial<QuizAnswer>) {
     patchQuiz({
@@ -40,8 +46,8 @@ export default function QuizEditor({
   const hasCorrect = filled.some((a) => a.correct);
   const warning =
     filled.length < 2
-      ? "Vyplň aspoň dvě odpovědi — prázdné se v prezentaci nezobrazí."
-      : !hasCorrect
+      ? "Vyplň aspoň dvě možnosti — prázdné se v prezentaci nezobrazí."
+      : isQuiz && !hasCorrect
         ? "Označ kolečkem, která odpověď je správná."
         : null;
 
@@ -50,7 +56,9 @@ export default function QuizEditor({
       <div className="flex flex-1 flex-col gap-3 overflow-auto p-4 md:p-8">
         <div className="card mx-auto flex w-full max-w-4xl flex-wrap items-center gap-2 p-3">
           <span className="text-xs text-muted">
-            Napiš otázku a odpovědi. Správnou označ kolečkem vpravo.
+            {isQuiz
+              ? "Napiš otázku a odpovědi. Správnou označ kolečkem vpravo."
+              : "Napiš otázku a možnosti. Anketa nemá správnou odpověď, jen ukáže, jak kdo hlasoval."}
           </span>
         </div>
 
@@ -125,35 +133,37 @@ export default function QuizEditor({
                       onChange={(e) =>
                         patchAnswer(answer.id, { text: e.target.value })
                       }
-                      placeholder={`Odpověď ${index + 1}`}
-                      aria-label={`Odpověď ${index + 1}`}
+                      placeholder={`${isQuiz ? "Odpověď" : "Možnost"} ${index + 1}`}
+                      aria-label={`${isQuiz ? "Odpověď" : "Možnost"} ${index + 1}`}
                       className="min-w-0 flex-1 bg-transparent font-semibold text-white outline-none placeholder:text-white/55"
                       style={{ fontSize: cqw(26) }}
                     />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        patchAnswer(answer.id, { correct: !answer.correct })
-                      }
-                      aria-pressed={!!answer.correct}
-                      title={
-                        answer.correct
-                          ? "Správná odpověď"
-                          : "Označit jako správnou"
-                      }
-                      className={`flex shrink-0 items-center justify-center rounded-full border-2 font-bold transition-colors duration-150 ${
-                        answer.correct
-                          ? "border-white bg-white text-[#241d1a]"
-                          : "border-white/50 text-transparent hover:border-white hover:text-white/60"
-                      }`}
-                      style={{
-                        width: cqw(36),
-                        height: cqw(36),
-                        fontSize: cqw(20),
-                      }}
-                    >
-                      ✓
-                    </button>
+                    {isQuiz && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          patchAnswer(answer.id, { correct: !answer.correct })
+                        }
+                        aria-pressed={!!answer.correct}
+                        title={
+                          answer.correct
+                            ? "Správná odpověď"
+                            : "Označit jako správnou"
+                        }
+                        className={`flex shrink-0 items-center justify-center rounded-full border-2 font-bold transition-colors duration-150 ${
+                          answer.correct
+                            ? "border-white bg-white text-[#241d1a]"
+                            : "border-white/50 text-transparent hover:border-white hover:text-white/60"
+                        }`}
+                        style={{
+                          width: cqw(36),
+                          height: cqw(36),
+                          fontSize: cqw(20),
+                        }}
+                      >
+                        ✓
+                      </button>
+                    )}
                   </div>
                 );
               })}

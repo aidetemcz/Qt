@@ -66,8 +66,18 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     description: "Hlasování bez správné odpovědi",
     group: "Interakce",
     glyph: "▤",
-    available: false,
-    initialConfig: { elements: [] },
+    available: true,
+    initialConfig: {
+      poll: {
+        question: "",
+        answers: [
+          { id: "a", text: "" },
+          { id: "b", text: "" },
+          { id: "c", text: "" },
+          { id: "d", text: "" },
+        ],
+      },
+    },
   },
   {
     id: "wordcloud",

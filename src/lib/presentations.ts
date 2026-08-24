@@ -46,11 +46,16 @@ export interface SlideQuiz {
   answers: QuizAnswer[];
 }
 
+/** Anketa: stejná otázka a možnosti jako kvíz, jen bez správné odpovědi. */
+export type SlidePoll = SlideQuiz;
+
 export interface SlideConfig {
   /** Freely positioned text boxes (current model). */
   elements?: SlideElement[];
   /** Quiz content; present only on quiz slides. */
   quiz?: SlideQuiz;
+  /** Obsah ankety; jen na slidech typu anketa. */
+  poll?: SlidePoll;
   /** Slide background colour set from the settings panel. */
   background?: string;
   /** Full-bleed image behind the text boxes. */

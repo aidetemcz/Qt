@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Player from "@/components/play/Player";
-import type { Session, Slide } from "@/lib/presentations";
+import type { Session, Slide, SlideQuiz } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -13,22 +13,25 @@ export const metadata = {
  * vyzvedne z /api/reveal.
  */
 function withoutCorrect(slides: Slide[]): Slide[] {
+  const strip = (question: SlideQuiz) => ({
+    ...question,
+    answers: question.answers.map((answer) => ({
+      id: answer.id,
+      text: answer.text,
+    })),
+  });
+
   return slides.map((slide) => {
-    const quiz = slide.config.quiz;
-    if (!quiz) {
+    const { quiz, poll } = slide.config;
+    if (!quiz && !poll) {
       return slide;
     }
     return {
       ...slide,
       config: {
         ...slide.config,
-        quiz: {
-          ...quiz,
-          answers: quiz.answers.map((answer) => ({
-            id: answer.id,
-            text: answer.text,
-          })),
-        },
+        ...(quiz ? { quiz: strip(quiz) } : {}),
+        ...(poll ? { poll: strip(poll) } : {}),
       },
     };
   });

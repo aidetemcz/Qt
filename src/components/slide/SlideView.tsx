@@ -33,6 +33,23 @@ export function getQuizAnswers(quiz: SlideQuiz): QuizAnswer[] {
   return (quiz.answers ?? []).slice(0, QUIZ_MAX_ANSWERS);
 }
 
+/** Kvíz i anketa: stejná otázka a dlaždice, liší se jen správnou odpovědí. */
+export type InteractionKind = "quiz" | "poll";
+export interface SlideInteraction extends SlideQuiz {
+  kind: InteractionKind;
+}
+
+/** Otázka slidu, ať už je to kvíz nebo anketa. */
+export function getInteraction(config: SlideConfig): SlideInteraction | null {
+  if (config.quiz) {
+    return { kind: "quiz", ...config.quiz };
+  }
+  if (config.poll) {
+    return { kind: "poll", ...config.poll };
+  }
+  return null;
+}
+
 /** Font size bounds, in px on the 960×540 slide base. */
 export const MIN_SIZE = 10;
 export const MAX_SIZE = 300;
@@ -206,6 +223,7 @@ export default function SlideView({
   answerCounts?: Record<string, number>;
 }) {
   const elements = getElements(config);
+  const interaction = getInteraction(config);
   return (
     <div
       className="relative aspect-video w-full overflow-hidden rounded-xl shadow-sm"
@@ -224,14 +242,15 @@ export default function SlideView({
           style={{ objectFit: config.image.fit ?? "cover" }}
         />
       )}
-      {config.quiz && (
+      {interaction && (
         <QuizLayer
-          quiz={config.quiz}
-          showCorrect={showCorrect}
+          quiz={interaction}
+          // Anketa žádnou správnou odpověď nemá, není co odkrývat.
+          showCorrect={showCorrect && interaction.kind === "quiz"}
           answerCounts={answerCounts}
         />
       )}
-      {!config.quiz && elements.length === 0 && !config.image?.src && (
+      {!interaction && elements.length === 0 && !config.image?.src && (
         <div
           className="absolute inset-0 flex items-center justify-center text-neutral-400"
           style={{ fontSize: cqw(28) }}
