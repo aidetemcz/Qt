@@ -42,8 +42,12 @@ export default function Player({
   // Seed from the database value (server-loaded) so a late joiner is already on
   // the right slide; realtime updates take over from there.
   const [position, setPosition] = useState(session.current_position);
-  // Odkrytí správné odpovědi řídí přednášející; sem přiteče stejným odběrem.
-  const [revealed, setRevealed] = useState(!!session.reveal_answer);
+  // Odkrytí řídí přednášející a přiteče stejným odběrem. Drží se u pozice,
+  // ke které dorazilo — jinak by odkrytí z minulé otázky prozradilo tu další.
+  const [reveal, setReveal] = useState({
+    position: session.current_position,
+    on: !!session.reveal_answer,
+  });
   // Bez migrace sloupec chybí — pak se čeká na nic a bereme to jako spuštěné.
   const [started, setStarted] = useState(session.started ?? true);
 
@@ -86,7 +90,10 @@ export default function Player({
           if (typeof next.started === "boolean") {
             setStarted(next.started);
           }
-          setRevealed(!!next.reveal_answer);
+          setReveal((prev) => ({
+            position: next.current_position ?? prev.position,
+            on: !!next.reveal_answer,
+          }));
         },
       )
       .subscribe();
@@ -100,6 +107,8 @@ export default function Player({
   const clamped = Math.min(Math.max(position, 0), Math.max(total - 1, 0));
   const slide = slides[clamped];
   const quiz = slide ? getInteraction(slide.config) : null;
+  // Odkrytí platí jen pro slide, u kterého ho přednášející zapnul.
+  const revealed = reveal.on && reveal.position === clamped;
 
   // Po odkrytí si správnou odpověď vyzvedneme; server ji vydá jen pro právě
   // promítaný slide a jen když je opravdu odkrytá. Anketa žádnou nemá.

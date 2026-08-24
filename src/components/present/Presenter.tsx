@@ -123,27 +123,30 @@ export default function Presenter({
       return;
     }
     setIsPending(true);
-    const { data, error } = await supabase
+    // Pozice a zakrytí se mění jedním zápisem. Kdyby to byly dva, účastník by
+    // mezi nimi stihl vidět nový slide ještě s odkrytou odpovědí.
+    let { data, error } = await supabase
       .from("sessions")
-      .update({ current_position: target })
+      .update({ current_position: target, reveal_answer: false })
       .eq("id", session.id)
       .select("current_position")
       .single<{ current_position: number }>();
+    if (error) {
+      // Databáze bez sloupce reveal_answer: posuň aspoň pozici.
+      ({ data, error } = await supabase
+        .from("sessions")
+        .update({ current_position: target })
+        .eq("id", session.id)
+        .select("current_position")
+        .single<{ current_position: number }>());
+    }
     setIsPending(false);
     if (error || !data) {
       return;
     }
     // Follow the value the database returned, not an optimistic guess.
     setPosition(data.current_position);
-    // Nový slide začíná zase zakrytý. Zvlášť od posunu pozice, aby přechod
-    // mezi slidy fungoval i na databázi, kde sloupec ještě nepřibyl.
-    if (revealed) {
-      setRevealed(false);
-      void supabase
-        .from("sessions")
-        .update({ reveal_answer: false })
-        .eq("id", session.id);
-    }
+    setRevealed(false);
   }
 
   async function toggleReveal() {
@@ -166,11 +169,13 @@ export default function Presenter({
 
   async function startPresenting() {
     setIsPending(true);
+    // Start uklidí i případné odkrytí zbylé z dřívějška.
     const { error } = await supabase
       .from("sessions")
-      .update({ started: true })
+      .update({ started: true, reveal_answer: false })
       .eq("id", session.id);
     setIsPending(false);
+    setRevealed(false);
     // I když se zápis nepovede, přednášejícího nenecháme v lobby.
     setStartError(!!error);
     setStarted(true);
