@@ -68,8 +68,8 @@ export default function QuestionEditor({
         : null;
 
   return (
-    <div className="flex w-full flex-1 flex-col lg:flex-row">
-      <div className="flex flex-1 flex-col gap-3 overflow-auto p-4 md:p-8">
+    <div className="flex min-h-0 w-full flex-1 flex-col lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-4 md:p-8">
         <div className="card mx-auto flex w-full max-w-4xl flex-wrap items-center gap-2 p-3">
           <span className="text-xs text-muted">
             {lockedAnswers

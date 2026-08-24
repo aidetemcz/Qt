@@ -171,7 +171,9 @@ export default function Editor({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    // Na širokém okně editor vyplní obrazovku a scrolluje se uvnitř sloupců —
+    // jinak by dlouhý seznam slidů odsunul pracovní plochu mimo obraz.
+    <div className="flex min-h-screen flex-col bg-background md:h-screen md:min-h-0 md:overflow-hidden">
       <header className="topbar sticky top-0 z-20 flex items-center justify-between gap-4 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <Link href="/dashboard" className="btn btn-secondary btn-sm shrink-0">
@@ -207,9 +209,9 @@ export default function Editor({
         </span>
       </header>
 
-      <div className="flex flex-1 flex-col md:flex-row">
-        <aside className="flex w-full shrink-0 flex-col border-b border-border bg-surface md:w-56 md:border-b-0 md:border-r">
-          <ul className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
+      <div className="flex flex-1 flex-col md:min-h-0 md:flex-row">
+        <aside className="flex w-full shrink-0 flex-col border-b border-border bg-surface md:min-h-0 md:w-56 md:border-b-0 md:border-r">
+          <ul className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 md:min-h-0">
             {slides.map((slide, index) => (
               <li key={slide.id} className="animate-fade-in">
                 <div
@@ -295,7 +297,7 @@ export default function Editor({
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-1 overflow-hidden">
+        <main className="flex min-w-0 flex-1 overflow-hidden md:min-h-0">
           {pickerOpen ? (
             <div className="flex flex-1 justify-center overflow-auto p-4 md:p-8">
               <SlideTypePicker

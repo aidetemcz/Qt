@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
@@ -73,13 +74,17 @@ export default function PresentationCard({
     <div
       className={`group card card-interactive animate-slide-up ${isPending ? "opacity-60" : ""}`}
     >
-      <div
+      {/* Náhled i název vedou rovnou do editoru, jako odkaz — jde tedy
+          otevřít i v nové kartě. */}
+      <Link
+        href={`/editor/${presentation.id}`}
+        aria-label={`Upravit ${presentation.title}`}
         className={`flex aspect-video items-center justify-center overflow-hidden rounded-t-2xl bg-gradient-to-br ${thumbnailFor(presentation.id)}`}
       >
         <span className="text-5xl font-extrabold text-white/90 drop-shadow-sm transition-transform duration-200 ease-out motion-safe:group-hover:scale-110">
           {presentation.title.charAt(0)}
         </span>
-      </div>
+      </Link>
       <div className="flex items-center justify-between gap-2 p-4">
         <div className="min-w-0 flex-1">
           {isEditing ? (
@@ -99,12 +104,13 @@ export default function PresentationCard({
               className="input px-2 py-1 text-sm font-semibold"
             />
           ) : (
-            <h2
-              className="truncate text-[0.9375rem] font-semibold text-neutral-900"
+            <Link
+              href={`/editor/${presentation.id}`}
               title={presentation.title}
+              className="block truncate text-[0.9375rem] font-semibold text-neutral-900 transition-colors duration-150 hover:text-brand"
             >
               {presentation.title}
-            </h2>
+            </Link>
           )}
           <p className="mt-1 text-xs text-muted">
             {slideCount} {slideCount === 1 ? "slide" : "slides"} · Edited{" "}
