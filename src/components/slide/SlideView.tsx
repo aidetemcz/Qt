@@ -138,7 +138,13 @@ export const WORDS_PER_PARTICIPANT = 3;
 /** Otázky od publika: delší text a míň kusů na obrazovku. */
 export const QA_TEXT_MAX = 200;
 export const QA_PER_PARTICIPANT = 3;
-export const QA_MAX_SHOWN = 6;
+/** Do jednoho sloupce se vejde šest otázek, ve dvou dvanáct. */
+export function qaPageSize(total: number): number {
+  return total > 6 ? 12 : 6;
+}
+export function qaPageCount(total: number): number {
+  return Math.max(1, Math.ceil(total / qaPageSize(total)));
+}
 
 /** Barvy slov pro světlé a pro tmavé pozadí. */
 const CLOUD_COLORS_ON_LIGHT = [
@@ -264,21 +270,27 @@ function WordCloudLayer({
 function QaLayer({
   qa,
   questions,
+  page,
   background,
 }: {
   qa: SlideQa;
   questions?: string[];
+  /** Která stránka otázek se ukazuje; přednášející jimi listuje. */
+  page: number;
   background: string;
 }) {
   const all = questions ?? [];
-  const shown = all.slice(0, QA_MAX_SHOWN);
-  const hidden = all.length - shown.length;
+  const size = qaPageSize(all.length);
+  const pages = qaPageCount(all.length);
+  const current = ((page % pages) + pages) % pages;
+  const shown = all.slice(current * size, current * size + size);
+  const twoColumns = size > 6;
   const ink = inkOn(background);
   const onDark = ink === "#ffffff";
   return (
     <div
       className="absolute inset-0 flex flex-col"
-      style={{ padding: cqw(36), gap: cqh(16) }}
+      style={{ padding: cqw(36), gap: cqh(14) }}
     >
       <p
         className="line-clamp-2 text-center font-bold break-words"
@@ -295,16 +307,20 @@ function QaLayer({
         </div>
       ) : (
         <div
-          className="flex flex-1 flex-col overflow-hidden"
-          style={{ gap: cqh(8) }}
+          className="grid flex-1 content-start overflow-hidden"
+          style={{
+            gap: `${cqh(7)} ${cqw(14)}`,
+            gridTemplateColumns: twoColumns ? "1fr 1fr" : "1fr",
+          }}
         >
           {shown.map((text, index) => (
             <p
-              key={`${index}-${text}`}
+              key={`${current}-${index}-${text}`}
               className="line-clamp-2 rounded-xl break-words"
               style={{
-                padding: `${cqh(8)} ${cqw(16)}`,
-                fontSize: cqw(24),
+                padding: `${cqh(7)} ${cqw(14)}`,
+                fontSize: cqw(twoColumns ? 19 : 24),
+                lineHeight: 1.25,
                 color: ink,
                 background: onDark
                   ? "rgb(255 255 255 / 0.12)"
@@ -314,15 +330,16 @@ function QaLayer({
               {text}
             </p>
           ))}
-          {hidden > 0 && (
-            <p
-              className="text-center"
-              style={{ fontSize: cqw(18), color: ink, opacity: 0.55 }}
-            >
-              a další {hidden}
-            </p>
-          )}
         </div>
+      )}
+
+      {pages > 1 && (
+        <p
+          className="text-center"
+          style={{ fontSize: cqw(18), color: ink, opacity: 0.55 }}
+        >
+          Strana {current + 1} z {pages}
+        </p>
       )}
     </div>
   );
@@ -423,6 +440,7 @@ export default function SlideView({
   answerCounts,
   words,
   questions,
+  questionPage = 0,
 }: {
   config: SlideConfig;
   /** Reveal which quiz answer is correct. Off everywhere but the editor. */
@@ -433,6 +451,8 @@ export default function SlideView({
   words?: CloudWord[];
   /** Otázky od publika, od nejnovější. */
   questions?: string[];
+  /** Stránka otázek, kterou přednášející právě ukazuje. */
+  questionPage?: number;
 }) {
   const elements = getElements(config);
   const interaction = getInteraction(config);
@@ -465,6 +485,7 @@ export default function SlideView({
         <QaLayer
           qa={config.qa}
           questions={questions}
+          page={questionPage}
           background={config.background ?? "#ffffff"}
         />
       )}

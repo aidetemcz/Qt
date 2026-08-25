@@ -6,6 +6,7 @@ import Lobby from "@/components/present/Lobby";
 import SlideView, {
   type CloudWord,
   getInteraction,
+  qaPageCount,
 } from "@/components/slide/SlideView";
 import type {
   Answer,
@@ -42,6 +43,8 @@ export default function Presenter({
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [words, setWords] = useState<WordEntry[]>([]);
+  // Otázek bývá víc, než se na slide vejde; přednášející jimi listuje.
+  const [qaPage, setQaPage] = useState(0);
 
   // Účastníci a jejich hlasy: jednou se načtou (kvůli reloadu uprostřed hry)
   // a dál přibývají realtimem.
@@ -176,6 +179,8 @@ export default function Presenter({
       .map((entry) => entry.text);
   }, [words, slide]);
 
+  const qaPages = qaPageCount(slideQuestions.length);
+
   async function move(delta: -1 | 1) {
     const target = clamped + delta;
     if (target < 0 || target >= total) {
@@ -206,6 +211,7 @@ export default function Presenter({
     // Follow the value the database returned, not an optimistic guess.
     setPosition(data.current_position);
     setRevealed(false);
+    setQaPage(0);
   }
 
   async function toggleReveal() {
@@ -310,6 +316,7 @@ export default function Presenter({
                   answerCounts={interaction ? answerCounts : undefined}
                   words={cloudWords}
                   questions={slideQuestions}
+                  questionPage={qaPage}
                 />
               </div>
             ) : (
@@ -346,6 +353,15 @@ export default function Presenter({
                 </span>
               )}
             </span>
+            {qaPages > 1 && (
+              <button
+                type="button"
+                onClick={() => setQaPage((page) => (page + 1) % qaPages)}
+                className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-white/15 motion-safe:hover:-translate-y-0.5"
+              >
+                Další otázky
+              </button>
+            )}
             {isQuiz && (
               <button
                 type="button"
