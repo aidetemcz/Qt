@@ -27,12 +27,20 @@ function thumbnailFor(id: string): string {
 }
 
 function formatDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString("en-US", {
+  return new Date(isoDate).toLocaleDateString("cs-CZ", {
     year: "numeric",
-    month: "short",
+    month: "numeric",
     day: "numeric",
     timeZone: "UTC",
   });
+}
+
+/** 1 slide, 2–4 slidy, jinak slidů. */
+function slideWord(count: number): string {
+  if (count === 1) {
+    return "slide";
+  }
+  return count >= 2 && count <= 4 ? "slidy" : "slidů";
 }
 
 export default function PresentationCard({
@@ -113,7 +121,7 @@ export default function PresentationCard({
             </Link>
           )}
           <p className="mt-1 text-xs text-muted">
-            {slideCount} {slideCount === 1 ? "slide" : "slides"} · Edited{" "}
+            {slideCount} {slideWord(slideCount)} · Upraveno{" "}
             {formatDate(presentation.updated_at)}
           </p>
         </div>

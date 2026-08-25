@@ -3,11 +3,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 const categories = [
-  "Presentation",
-  "Quiz",
-  "Live poll",
+  "Prezentace",
+  "Kvíz",
+  "Živá anketa",
   "Word cloud",
-  "Q&A session",
+  "Otázky a odpovědi",
 ];
 
 export default async function HomePage() {
@@ -33,12 +33,12 @@ export default async function HomePage() {
             />
           </Link>
           <nav className="hidden items-center gap-1 sm:flex">
-            {["Templates", "Features", "Pricing"].map((item) => (
+            {["Šablony", "Funkce", "Ceník"].map((item) => (
               <button
                 key={item}
                 type="button"
                 disabled
-                title="Coming soon"
+                title="Připravujeme"
                 className="btn btn-disabled"
               >
                 {item}
@@ -47,40 +47,40 @@ export default async function HomePage() {
           </nav>
           <div className="flex items-center gap-1.5">
             <Link href="/join" className="btn btn-ghost">
-              Join a room
+              Připojit se
             </Link>
             {!user && (
               <Link href="/login" className="btn btn-ghost">
-                Log in
+                Přihlásit se
               </Link>
             )}
             <Link href="/dashboard" className="btn btn-primary">
-              Go to projects
+              Moje prezentace
             </Link>
           </div>
         </div>
       </header>
 
       <main className="flex flex-1 flex-col items-center px-6 pt-16 pb-20 text-center sm:pt-24">
-        <p className="eyebrow animate-fade-in">Live · Interactive · Free</p>
+        <p className="eyebrow animate-fade-in">Živě · Interaktivně · Zdarma</p>
         <h1 className="animate-slide-up mt-5 max-w-4xl text-5xl leading-[1.05] font-extrabold text-ink sm:text-7xl">
-          What will you <span className="marker">present</span> today?
+          Co dnes budeš <span className="marker">prezentovat</span>?
         </h1>
         <p className="animate-slide-up mt-7 max-w-xl text-lg leading-relaxed text-muted">
-          Qt makes interactive presentations that get your audience talking —
-          quizzes, polls and live Q&amp;A in one place.
+          Qt dělá z prezentací něco, do čeho publikum mluví — kvízy, ankety a
+          otázky na jednom místě.
         </p>
         <div className="animate-slide-up mt-10 flex flex-wrap items-center justify-center gap-3">
           <Link href="/dashboard" className="btn btn-primary btn-lg">
-            Go to your projects
+            Moje prezentace
           </Link>
           <button
             type="button"
             disabled
-            title="Coming soon"
+            title="Připravujeme"
             className="btn btn-secondary btn-lg btn-disabled"
           >
-            Browse templates
+            Procházet šablony
           </button>
         </div>
 
@@ -90,7 +90,7 @@ export default async function HomePage() {
               key={category}
               type="button"
               disabled
-              title="Coming soon"
+              title="Připravujeme"
               className="cursor-not-allowed rounded-full border border-border bg-surface/80 px-4 py-2 text-sm font-medium text-muted shadow-sm"
             >
               {category}
@@ -131,7 +131,7 @@ export default async function HomePage() {
       </main>
 
       <footer className="border-t border-border/70 py-8 text-center text-sm text-muted">
-        Qt — interactive presentations
+        Qt — interaktivní prezentace
       </footer>
     </div>
   );

@@ -7,7 +7,7 @@ const defaultClassName = "btn btn-primary";
 
 export default function NewPresentationButton({
   className = defaultClassName,
-  label = "New presentation",
+  label = "Nová prezentace",
 }: {
   className?: string;
   label?: string;
@@ -21,7 +21,7 @@ export default function NewPresentationButton({
       onClick={() => startTransition(() => createPresentation())}
       className={className}
     >
-      {isPending ? "Creating…" : label}
+      {isPending ? "Vytvářím…" : label}
     </button>
   );
 }

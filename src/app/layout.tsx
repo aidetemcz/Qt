@@ -16,7 +16,7 @@ const sans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "Qt",
-  description: "Interactive presentations that get your audience talking.",
+  description: "Interaktivní prezentace, do kterých se publikum zapojí.",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable}`}>
+    <html lang="cs" className={`${display.variable} ${sans.variable}`}>
       <body className="relative min-h-screen bg-background text-ink antialiased">
         {/* Ambient light blooms behind the whole app. */}
         <div aria-hidden className="app-canvas" />

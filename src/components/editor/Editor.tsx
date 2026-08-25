@@ -177,7 +177,7 @@ export default function Editor({
       <header className="topbar sticky top-0 z-20 flex items-center justify-between gap-4 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <Link href="/dashboard" className="btn btn-secondary btn-sm shrink-0">
-            ← Dashboard
+            ← Prezentace
           </Link>
           <input
             type="text"

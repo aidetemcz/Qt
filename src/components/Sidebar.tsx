@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import NewPresentationButton from "@/components/NewPresentationButton";
 
-const disabledItems = ["Templates", "Brand", "Trash"];
+const disabledItems = ["Šablony", "Značka", "Koš"];
 
 export default function Sidebar() {
   return (
@@ -14,24 +14,24 @@ export default function Sidebar() {
         <Image src="/logo-qt.svg" alt="Qt logo" width={76} height={25} />
       </Link>
       <NewPresentationButton
-        label="+ New presentation"
+        label="+ Nová prezentace"
         className="btn btn-primary hidden w-full md:mb-7 md:inline-flex"
       />
       <Link
         href="/"
         className="rounded-xl px-3 py-2 text-sm font-medium text-muted transition-colors duration-150 hover:bg-brand-50 hover:text-brand"
       >
-        Home
+        Domů
       </Link>
       <span className="rounded-xl bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-dark">
-        Projects
+        Prezentace
       </span>
       {disabledItems.map((item) => (
         <button
           key={item}
           type="button"
           disabled
-          title="Coming soon"
+          title="Připravujeme"
           className="hidden cursor-not-allowed rounded-xl px-3 py-2 text-left text-sm font-medium text-neutral-400 md:block"
         >
           {item}
