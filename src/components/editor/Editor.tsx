@@ -6,6 +6,7 @@ import { renamePresentation } from "@/app/dashboard/actions";
 import QuestionEditor from "@/components/editor/QuestionEditor";
 import SlideEditorCanvas from "@/components/editor/SlideEditorCanvas";
 import SlideTypePicker from "@/components/editor/SlideTypePicker";
+import WordCloudEditor from "@/components/editor/WordCloudEditor";
 import SlideView, {
   getElements,
   getInteraction,
@@ -28,6 +29,9 @@ const saveLabels: Record<SaveState, string> = {
 };
 
 function snippet(config: SlideConfig): string {
+  if (config.wordcloud) {
+    return config.wordcloud.question.trim() || "Word cloud";
+  }
   const interaction = getInteraction(config);
   if (interaction) {
     return (
@@ -309,7 +313,13 @@ export default function Editor({
               />
             </div>
           ) : selected ? (
-            getInteraction(selected.config) ? (
+            selected.config.wordcloud ? (
+              <WordCloudEditor
+                key={selected.id}
+                config={selected.config}
+                onChange={(config) => updateConfig(selected.id, config)}
+              />
+            ) : getInteraction(selected.config) ? (
               <QuestionEditor
                 key={selected.id}
                 kind={getInteraction(selected.config)!.kind}

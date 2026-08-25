@@ -94,8 +94,8 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     description: "Slova od publika v oblaku",
     group: "Interakce",
     glyph: "❋",
-    available: false,
-    initialConfig: { elements: [] },
+    available: true,
+    initialConfig: { wordcloud: { question: "" } },
   },
   {
     id: "qa",

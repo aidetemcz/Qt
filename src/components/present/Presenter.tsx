@@ -3,8 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Lobby from "@/components/present/Lobby";
-import SlideView, { getInteraction } from "@/components/slide/SlideView";
-import type { Answer, Participant, Session, Slide } from "@/lib/presentations";
+import SlideView, {
+  type CloudWord,
+  getInteraction,
+} from "@/components/slide/SlideView";
+import type {
+  Answer,
+  Participant,
+  Session,
+  Slide,
+  WordEntry,
+} from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
 
 export default function Presenter({
@@ -32,6 +41,7 @@ export default function Presenter({
   const [startError, setStartError] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
+  const [words, setWords] = useState<WordEntry[]>([]);
 
   // Účastníci a jejich hlasy: jednou se načtou (kvůli reloadu uprostřed hry)
   // a dál přibývají realtimem.
@@ -39,7 +49,7 @@ export default function Presenter({
     let cancelled = false;
 
     async function load() {
-      const [participantResult, answerResult] = await Promise.all([
+      const [participantResult, answerResult, wordResult] = await Promise.all([
         supabase
           .from("participants")
           .select("*")
@@ -51,12 +61,18 @@ export default function Presenter({
           .select("*")
           .eq("session_id", session.id)
           .returns<Answer[]>(),
+        supabase
+          .from("words")
+          .select("*")
+          .eq("session_id", session.id)
+          .returns<WordEntry[]>(),
       ]);
       if (cancelled) {
         return;
       }
       setParticipants(participantResult.data ?? []);
       setAnswers(answerResult.data ?? []);
+      setWords(wordResult.data ?? []);
     }
     load();
 
@@ -90,6 +106,20 @@ export default function Presenter({
             return prev.some((a) => a.id === next.id) ? prev : [...prev, next];
           }),
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "words",
+          filter: `session_id=eq.${session.id}`,
+        },
+        (payload) =>
+          setWords((prev) => {
+            const next = payload.new as WordEntry;
+            return prev.some((w) => w.id === next.id) ? prev : [...prev, next];
+          }),
+      )
       .subscribe();
 
     return () => {
@@ -116,6 +146,24 @@ export default function Presenter({
     }
     return counts;
   }, [slideAnswers]);
+
+  // Slova k promítanému slidu, spočítaná a seřazená od nejčastějšího.
+  const cloudWords = useMemo<CloudWord[]>(() => {
+    if (!slide?.config.wordcloud) {
+      return [];
+    }
+    const counts = new Map<string, number>();
+    for (const entry of words) {
+      if (entry.slide_id === slide.id) {
+        // Bez sjednocení velikosti písmen by "Ano" a "ano" byla dvě slova.
+        const key = entry.text.toLocaleLowerCase("cs");
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+    return [...counts]
+      .map(([text, count]) => ({ text, count }))
+      .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text, "cs"));
+  }, [words, slide]);
 
   async function move(delta: -1 | 1) {
     const target = clamped + delta;
@@ -249,6 +297,7 @@ export default function Presenter({
                   config={slide.config}
                   showCorrect={revealed}
                   answerCounts={interaction ? answerCounts : undefined}
+                  words={cloudWords}
                 />
               </div>
             ) : (
@@ -272,6 +321,11 @@ export default function Presenter({
               {interaction && (
                 <span className="mt-1 block normal-case">
                   {slideAnswers.length} / {participants.length} odpovědělo
+                </span>
+              )}
+              {slide?.config.wordcloud && (
+                <span className="mt-1 block normal-case">
+                  {cloudWords.reduce((sum, word) => sum + word.count, 0)} slov
                 </span>
               )}
             </span>

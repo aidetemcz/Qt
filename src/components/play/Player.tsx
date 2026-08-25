@@ -5,6 +5,8 @@ import SlideView, {
   getInteraction,
   getQuizAnswers,
   QUIZ_ANSWER_STYLES,
+  WORD_MAX,
+  WORDS_PER_PARTICIPANT,
 } from "@/components/slide/SlideView";
 import type { Session, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/client";
@@ -62,6 +64,9 @@ export default function Player({
   const [sending, setSending] = useState(false);
   // Správné odpovědi dorazí až po odkrytí, ze serveru — v configu je nemáme.
   const [correctIds, setCorrectIds] = useState<string[]>([]);
+  // Slova poslaná do word cloudu, podle slidu.
+  const [sentWords, setSentWords] = useState<Record<string, string[]>>({});
+  const [word, setWord] = useState("");
 
   // localStorage se čte až po připojení komponenty, jinak by se rozešel se
   // serverovým renderem.
@@ -179,7 +184,40 @@ export default function Player({
     setPicked((prev) => ({ ...prev, [slide.id]: answerId }));
   }
 
+  async function sendWord() {
+    const trimmed = word.trim();
+    const already = slide ? (sentWords[slide.id] ?? []) : [];
+    if (
+      !participant ||
+      !slide ||
+      !trimmed ||
+      sending ||
+      already.length >= WORDS_PER_PARTICIPANT
+    ) {
+      return;
+    }
+    setSending(true);
+    const { error } = await supabase.from("words").insert({
+      session_id: session.id,
+      slide_id: slide.id,
+      participant_id: participant.id,
+      text: trimmed,
+    });
+    setSending(false);
+    if (error) {
+      return;
+    }
+    setSentWords((prev) => ({
+      ...prev,
+      [slide.id]: [...(prev[slide.id] ?? []), trimmed],
+    }));
+    setWord("");
+  }
+
   const myAnswer = slide ? picked[slide.id] : undefined;
+  const cloud = slide?.config.wordcloud;
+  const myWords = slide ? (sentWords[slide.id] ?? []) : [];
+  const wordsLeft = WORDS_PER_PARTICIPANT - myWords.length;
 
   return (
     <div className="relative flex min-h-screen flex-col bg-[#17120f] text-white">
@@ -227,6 +265,57 @@ export default function Player({
             <p className="text-2xl font-extrabold text-white">Jsi ve hře!</p>
             <p className="mt-3 text-sm text-white/50">
               Počkej, až přednášející prezentaci spustí.
+            </p>
+          </div>
+        ) : cloud && slide ? (
+          <div key={slide.id} className="animate-fade-in w-full max-w-sm">
+            <p className="text-center text-lg font-bold text-white">
+              {cloud.question}
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendWord();
+              }}
+              className="mt-6 flex gap-2"
+            >
+              <input
+                type="text"
+                value={word}
+                onChange={(e) => setWord(e.target.value)}
+                maxLength={WORD_MAX}
+                disabled={wordsLeft <= 0}
+                placeholder={wordsLeft > 0 ? "Napiš slovo" : "Hotovo"}
+                aria-label="Slovo"
+                className="min-w-0 flex-1 rounded-full border border-white/15 bg-white/10 px-5 py-3 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-2 focus:ring-white/20 focus:outline-none disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={sending || wordsLeft <= 0 || !word.trim()}
+                className="shrink-0 rounded-full bg-brand px-5 py-3 font-semibold text-white shadow-brand transition-all duration-150 hover:bg-brand-dark disabled:opacity-40 motion-safe:hover:-translate-y-0.5"
+              >
+                Poslat
+              </button>
+            </form>
+
+            {myWords.length > 0 && (
+              <ul className="mt-4 flex flex-wrap justify-center gap-2">
+                {myWords.map((sent, index) => (
+                  <li
+                    key={`${sent}-${index}`}
+                    className="animate-pop rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold text-white"
+                  >
+                    {sent}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="mt-4 text-center text-sm text-white/60">
+              {wordsLeft > 0
+                ? `Můžeš poslat ještě ${wordsLeft} ${wordsLeft === 1 ? "slovo" : "slova"}.`
+                : "Díky, víc slov už poslat nejde."}
             </p>
           </div>
         ) : quiz && slide ? (

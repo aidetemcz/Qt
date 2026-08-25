@@ -49,6 +49,11 @@ export interface SlideQuiz {
 /** Anketa: stejná otázka a možnosti jako kvíz, jen bez správné odpovědi. */
 export type SlidePoll = SlideQuiz;
 
+/** Word cloud: jen zadání, slova posílá publikum. */
+export interface SlideWordCloud {
+  question: string;
+}
+
 export interface SlideConfig {
   /** Freely positioned text boxes (current model). */
   elements?: SlideElement[];
@@ -56,6 +61,8 @@ export interface SlideConfig {
   quiz?: SlideQuiz;
   /** Obsah ankety; jen na slidech typu anketa. */
   poll?: SlidePoll;
+  /** Zadání word cloudu; jen na slidech tohoto typu. */
+  wordcloud?: SlideWordCloud;
   /** Slide background colour set from the settings panel. */
   background?: string;
   /** Full-bleed image behind the text boxes. */
@@ -82,6 +89,16 @@ export interface Participant {
   id: string;
   session_id: string;
   nickname: string;
+  created_at: string;
+}
+
+/** Jedno slovo poslané do word cloudu. */
+export interface WordEntry {
+  id: string;
+  session_id: string;
+  slide_id: string;
+  participant_id: string;
+  text: string;
   created_at: string;
 }
 

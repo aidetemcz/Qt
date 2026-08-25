@@ -3,6 +3,7 @@ import type {
   SlideConfig,
   SlideElement,
   SlideQuiz,
+  SlideWordCloud,
 } from "@/lib/presentations";
 
 /** Character limits so authored text stays within the slide frame. */
@@ -122,6 +123,71 @@ export function elementStyle(el: SlideElement): React.CSSProperties {
   };
 }
 
+/** Slovo v cloudu i s tím, kolikrát ho publikum poslalo. */
+export interface CloudWord {
+  text: string;
+  count: number;
+}
+
+/** Kolik slov se na slide vejde, než začne být nečitelný. */
+export const CLOUD_MAX_WORDS = 40;
+export const WORD_MAX = 40;
+export const WORDS_PER_PARTICIPANT = 3;
+
+const CLOUD_COLORS = ["#dc5b5b", "#5f8794", "#d9913d", "#4f8f60", "#241d1a"];
+
+/**
+ * Word cloud: zadání nahoře, pod ním slova od publika. Čím častější slovo,
+ * tím větší — velikost se počítá vůči nejčastějšímu, ať cloud vypadá stejně
+ * u pěti i u sta odpovědí.
+ */
+function WordCloudLayer({
+  cloud,
+  words,
+}: {
+  cloud: SlideWordCloud;
+  words?: CloudWord[];
+}) {
+  const shown = (words ?? []).slice(0, CLOUD_MAX_WORDS);
+  const max = shown.reduce((top, word) => Math.max(top, word.count), 0);
+  return (
+    <div
+      className="absolute inset-0 flex flex-col"
+      style={{ padding: cqw(36), gap: cqh(18) }}
+    >
+      <p
+        className="line-clamp-2 text-center font-bold break-words text-[#241d1a]"
+        style={{ fontSize: cqw(38), lineHeight: 1.15 }}
+      >
+        {cloud.question || "Zadání"}
+      </p>
+      <div
+        className="flex flex-1 flex-wrap content-center items-center justify-center overflow-hidden"
+        style={{ gap: `${cqh(6)} ${cqw(18)}` }}
+      >
+        {shown.length === 0 ? (
+          <span className="text-neutral-400" style={{ fontSize: cqw(24) }}>
+            Slova se objeví, jak je publikum pošle.
+          </span>
+        ) : (
+          shown.map((word, index) => (
+            <span
+              key={word.text}
+              className="font-extrabold"
+              style={{
+                fontSize: cqw(24 + (word.count / Math.max(max, 1)) * 48),
+                color: CLOUD_COLORS[index % CLOUD_COLORS.length],
+              }}
+            >
+              {word.text}
+            </span>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Read-only rendering of a quiz: the question on a card, the answers in a grid
  * of coloured tiles. Empty answer slots are left out, so a two-option question
@@ -215,12 +281,15 @@ export default function SlideView({
   config,
   showCorrect = false,
   answerCounts,
+  words,
 }: {
   config: SlideConfig;
   /** Reveal which quiz answer is correct. Off everywhere but the editor. */
   showCorrect?: boolean;
   /** Počty hlasů podle id odpovědi. Ukazuje je jen přednášející. */
   answerCounts?: Record<string, number>;
+  /** Slova do word cloudu, seřazená od nejčastějšího. */
+  words?: CloudWord[];
 }) {
   const elements = getElements(config);
   const interaction = getInteraction(config);
@@ -242,6 +311,9 @@ export default function SlideView({
           style={{ objectFit: config.image.fit ?? "cover" }}
         />
       )}
+      {config.wordcloud && (
+        <WordCloudLayer cloud={config.wordcloud} words={words} />
+      )}
       {interaction && (
         <QuizLayer
           quiz={interaction}
@@ -250,14 +322,17 @@ export default function SlideView({
           answerCounts={answerCounts}
         />
       )}
-      {!interaction && elements.length === 0 && !config.image?.src && (
-        <div
-          className="absolute inset-0 flex items-center justify-center text-neutral-400"
-          style={{ fontSize: cqw(28) }}
-        >
-          Prázdný slide
-        </div>
-      )}
+      {!interaction &&
+        !config.wordcloud &&
+        elements.length === 0 &&
+        !config.image?.src && (
+          <div
+            className="absolute inset-0 flex items-center justify-center text-neutral-400"
+            style={{ fontSize: cqw(28) }}
+          >
+            Prázdný slide
+          </div>
+        )}
       {elements.map((el) => (
         <div
           key={el.id}
