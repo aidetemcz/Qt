@@ -5,6 +5,8 @@ import SlideView, {
   getInteraction,
   getQuizAnswers,
   QUIZ_ANSWER_STYLES,
+  QA_PER_PARTICIPANT,
+  QA_TEXT_MAX,
   WORD_MAX,
   WORDS_PER_PARTICIPANT,
 } from "@/components/slide/SlideView";
@@ -187,12 +189,13 @@ export default function Player({
   async function sendWord() {
     const trimmed = word.trim();
     const already = slide ? (sentWords[slide.id] ?? []) : [];
+    const limit = slide?.config.qa ? QA_PER_PARTICIPANT : WORDS_PER_PARTICIPANT;
     if (
       !participant ||
       !slide ||
       !trimmed ||
       sending ||
-      already.length >= WORDS_PER_PARTICIPANT
+      already.length >= limit
     ) {
       return;
     }
@@ -216,8 +219,10 @@ export default function Player({
 
   const myAnswer = slide ? picked[slide.id] : undefined;
   const cloud = slide?.config.wordcloud;
+  const qa = slide?.config.qa;
   const myWords = slide ? (sentWords[slide.id] ?? []) : [];
-  const wordsLeft = WORDS_PER_PARTICIPANT - myWords.length;
+  const wordsLeft =
+    (qa ? QA_PER_PARTICIPANT : WORDS_PER_PARTICIPANT) - myWords.length;
 
   return (
     <div className="relative flex min-h-screen flex-col bg-[#17120f] text-white">
@@ -265,6 +270,57 @@ export default function Player({
             <p className="text-2xl font-extrabold text-white">Jsi ve hře!</p>
             <p className="mt-3 text-sm text-white/50">
               Počkej, až přednášející prezentaci spustí.
+            </p>
+          </div>
+        ) : qa && slide ? (
+          <div key={slide.id} className="animate-fade-in w-full max-w-md">
+            <p className="text-center text-lg font-bold text-white">
+              {qa.question || "Na co se chceš zeptat?"}
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendWord();
+              }}
+              className="mt-6 flex flex-col gap-3"
+            >
+              <textarea
+                value={word}
+                onChange={(e) => setWord(e.target.value)}
+                maxLength={QA_TEXT_MAX}
+                rows={3}
+                disabled={wordsLeft <= 0}
+                placeholder={wordsLeft > 0 ? "Napiš svoji otázku" : "Hotovo"}
+                aria-label="Otázka"
+                className="w-full resize-none rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-2 focus:ring-white/20 focus:outline-none disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={sending || wordsLeft <= 0 || !word.trim()}
+                className="rounded-full bg-brand px-5 py-3 font-semibold text-white shadow-brand transition-all duration-150 hover:bg-brand-dark disabled:opacity-40 motion-safe:hover:-translate-y-0.5"
+              >
+                Poslat otázku
+              </button>
+            </form>
+
+            {myWords.length > 0 && (
+              <ul className="mt-4 flex flex-col gap-2">
+                {myWords.map((sent, index) => (
+                  <li
+                    key={`${sent}-${index}`}
+                    className="animate-pop rounded-2xl bg-white/10 px-4 py-2 text-sm text-white/80"
+                  >
+                    {sent}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="mt-4 text-center text-sm text-white/60">
+              {wordsLeft > 0
+                ? `Můžeš poslat ještě ${wordsLeft} ${wordsLeft === 1 ? "otázku" : "otázky"}.`
+                : "Díky, víc otázek už poslat nejde."}
             </p>
           </div>
         ) : cloud && slide ? (

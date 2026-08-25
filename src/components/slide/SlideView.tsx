@@ -2,6 +2,7 @@ import type {
   QuizAnswer,
   SlideConfig,
   SlideElement,
+  SlideQa,
   SlideQuiz,
   SlideWordCloud,
 } from "@/lib/presentations";
@@ -134,6 +135,11 @@ export const CLOUD_MAX_WORDS = 40;
 export const WORD_MAX = 40;
 export const WORDS_PER_PARTICIPANT = 3;
 
+/** Otázky od publika: delší text a míň kusů na obrazovku. */
+export const QA_TEXT_MAX = 200;
+export const QA_PER_PARTICIPANT = 3;
+export const QA_MAX_SHOWN = 6;
+
 /** Barvy slov pro světlé a pro tmavé pozadí. */
 const CLOUD_COLORS_ON_LIGHT = [
   "#c24747",
@@ -252,6 +258,77 @@ function WordCloudLayer({
 }
 
 /**
+ * Otázky a odpovědi: zadání nahoře, pod ním otázky od publika. Vejde se jich
+ * jen pár, takže se ukazují ty nejnovější a zbytek se jen spočítá.
+ */
+function QaLayer({
+  qa,
+  questions,
+  background,
+}: {
+  qa: SlideQa;
+  questions?: string[];
+  background: string;
+}) {
+  const all = questions ?? [];
+  const shown = all.slice(0, QA_MAX_SHOWN);
+  const hidden = all.length - shown.length;
+  const ink = inkOn(background);
+  const onDark = ink === "#ffffff";
+  return (
+    <div
+      className="absolute inset-0 flex flex-col"
+      style={{ padding: cqw(36), gap: cqh(16) }}
+    >
+      <p
+        className="line-clamp-2 text-center font-bold break-words"
+        style={{ fontSize: cqw(34), lineHeight: 1.15, color: ink }}
+      >
+        {qa.question || "Na co se chcete zeptat?"}
+      </p>
+
+      {shown.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
+          <span style={{ fontSize: cqw(24), color: ink, opacity: 0.55 }}>
+            Otázky se objeví, jak je publikum pošle.
+          </span>
+        </div>
+      ) : (
+        <div
+          className="flex flex-1 flex-col overflow-hidden"
+          style={{ gap: cqh(8) }}
+        >
+          {shown.map((text, index) => (
+            <p
+              key={`${index}-${text}`}
+              className="line-clamp-2 rounded-xl break-words"
+              style={{
+                padding: `${cqh(8)} ${cqw(16)}`,
+                fontSize: cqw(24),
+                color: ink,
+                background: onDark
+                  ? "rgb(255 255 255 / 0.12)"
+                  : "rgb(36 29 26 / 0.06)",
+              }}
+            >
+              {text}
+            </p>
+          ))}
+          {hidden > 0 && (
+            <p
+              className="text-center"
+              style={{ fontSize: cqw(18), color: ink, opacity: 0.55 }}
+            >
+              a další {hidden}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * Read-only rendering of a quiz: the question on a card, the answers in a grid
  * of coloured tiles. Empty answer slots are left out, so a two-option question
  * shows two tiles. Which answer is correct stays hidden unless `showCorrect`.
@@ -345,6 +422,7 @@ export default function SlideView({
   showCorrect = false,
   answerCounts,
   words,
+  questions,
 }: {
   config: SlideConfig;
   /** Reveal which quiz answer is correct. Off everywhere but the editor. */
@@ -353,6 +431,8 @@ export default function SlideView({
   answerCounts?: Record<string, number>;
   /** Slova do word cloudu, seřazená od nejčastějšího. */
   words?: CloudWord[];
+  /** Otázky od publika, od nejnovější. */
+  questions?: string[];
 }) {
   const elements = getElements(config);
   const interaction = getInteraction(config);
@@ -381,6 +461,13 @@ export default function SlideView({
           background={config.background ?? "#ffffff"}
         />
       )}
+      {config.qa && (
+        <QaLayer
+          qa={config.qa}
+          questions={questions}
+          background={config.background ?? "#ffffff"}
+        />
+      )}
       {interaction && (
         <QuizLayer
           quiz={interaction}
@@ -391,6 +478,7 @@ export default function SlideView({
       )}
       {!interaction &&
         !config.wordcloud &&
+        !config.qa &&
         elements.length === 0 &&
         !config.image?.src && (
           <div

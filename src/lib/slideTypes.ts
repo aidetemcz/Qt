@@ -103,8 +103,8 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     description: "Publikum se ptá, ty odpovídáš",
     group: "Interakce",
     glyph: "?",
-    available: false,
-    initialConfig: { elements: [] },
+    available: true,
+    initialConfig: { qa: { question: "" } },
   },
 ];
 

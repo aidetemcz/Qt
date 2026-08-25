@@ -165,6 +165,17 @@ export default function Presenter({
       .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text, "cs"));
   }, [words, slide]);
 
+  // Otázky k promítanému slidu, od nejnovější.
+  const slideQuestions = useMemo(() => {
+    if (!slide?.config.qa) {
+      return [];
+    }
+    return words
+      .filter((entry) => entry.slide_id === slide.id)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .map((entry) => entry.text);
+  }, [words, slide]);
+
   async function move(delta: -1 | 1) {
     const target = clamped + delta;
     if (target < 0 || target >= total) {
@@ -298,6 +309,7 @@ export default function Presenter({
                   showCorrect={revealed}
                   answerCounts={interaction ? answerCounts : undefined}
                   words={cloudWords}
+                  questions={slideQuestions}
                 />
               </div>
             ) : (
@@ -326,6 +338,11 @@ export default function Presenter({
               {slide?.config.wordcloud && (
                 <span className="mt-1 block normal-case">
                   {cloudWords.reduce((sum, word) => sum + word.count, 0)} slov
+                </span>
+              )}
+              {slide?.config.qa && (
+                <span className="mt-1 block normal-case">
+                  {slideQuestions.length} otázek
                 </span>
               )}
             </span>

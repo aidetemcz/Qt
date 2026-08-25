@@ -5,17 +5,21 @@ import SlideView, { QUESTION_MAX } from "@/components/slide/SlideView";
 import type { SlideConfig } from "@/lib/presentations";
 
 /**
- * Editor word cloudu. Autor zadává jenom otázku — slova přijdou od publika
- * až v prezentaci, takže plocha ukazuje slide tak, jak bude vypadat prázdný.
+ * Editor slidu, kde autor zadává jen otázku a obsah přijde od publika —
+ * word cloud a otázky a odpovědi. Plocha ukazuje slide tak, jak bude vypadat,
+ * než něco dorazí.
  */
-export default function WordCloudEditor({
+export default function PromptEditor({
+  kind,
   config,
   onChange,
 }: {
+  kind: "wordcloud" | "qa";
   config: SlideConfig;
   onChange: (config: SlideConfig) => void;
 }) {
-  const cloud = config.wordcloud ?? { question: "" };
+  const isCloud = kind === "wordcloud";
+  const prompt = (isCloud ? config.wordcloud : config.qa) ?? { question: "" };
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col lg:flex-row">
@@ -27,15 +31,21 @@ export default function WordCloudEditor({
             </span>
             <input
               type="text"
-              value={cloud.question}
+              value={prompt.question}
               maxLength={QUESTION_MAX}
-              onChange={(e) =>
-                onChange({
-                  ...config,
-                  wordcloud: { ...cloud, question: e.target.value },
-                })
+              onChange={(e) => {
+                const next = { ...prompt, question: e.target.value };
+                onChange(
+                  isCloud
+                    ? { ...config, wordcloud: next }
+                    : { ...config, qa: next },
+                );
+              }}
+              placeholder={
+                isCloud
+                  ? "Např. Jedním slovem: jak se dnes cítíš?"
+                  : "Např. Na co se chcete zeptat?"
               }
-              placeholder="Např. Jedním slovem: jak se dnes cítíš?"
               className="input"
             />
           </label>
@@ -46,8 +56,9 @@ export default function WordCloudEditor({
         </div>
 
         <p className="mx-auto w-full max-w-4xl text-xs text-muted">
-          Slova napíše publikum na svých zařízeních. Každý může poslat několik,
-          nejčastější budou v oblaku největší.
+          {isCloud
+            ? "Slova napíše publikum na svých zařízeních. Každý může poslat několik, nejčastější budou v oblaku největší."
+            : "Otázky napíše publikum na svých zařízeních. Na plátně se ukazují od nejnovější."}
         </p>
       </div>
 

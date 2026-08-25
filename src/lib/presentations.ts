@@ -54,6 +54,9 @@ export interface SlideWordCloud {
   question: string;
 }
 
+/** Otázky a odpovědi: zadání, na které se publikum ptá vlastními slovy. */
+export type SlideQa = SlideWordCloud;
+
 export interface SlideConfig {
   /** Freely positioned text boxes (current model). */
   elements?: SlideElement[];
@@ -63,6 +66,8 @@ export interface SlideConfig {
   poll?: SlidePoll;
   /** Zadání word cloudu; jen na slidech tohoto typu. */
   wordcloud?: SlideWordCloud;
+  /** Zadání pro otázky od publika; jen na slidech tohoto typu. */
+  qa?: SlideQa;
   /** Slide background colour set from the settings panel. */
   background?: string;
   /** Full-bleed image behind the text boxes. */
@@ -92,7 +97,7 @@ export interface Participant {
   created_at: string;
 }
 
-/** Jedno slovo poslané do word cloudu. */
+/** Text poslaný účastníkem — slovo do cloudu nebo otázka na Q&A slidu. */
 export interface WordEntry {
   id: string;
   session_id: string;
