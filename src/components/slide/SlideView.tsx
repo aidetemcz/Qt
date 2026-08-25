@@ -134,7 +134,66 @@ export const CLOUD_MAX_WORDS = 40;
 export const WORD_MAX = 40;
 export const WORDS_PER_PARTICIPANT = 3;
 
-const CLOUD_COLORS = ["#dc5b5b", "#5f8794", "#d9913d", "#4f8f60", "#241d1a"];
+/** Barvy slov pro světlé a pro tmavé pozadí. */
+const CLOUD_COLORS_ON_LIGHT = [
+  "#c24747",
+  "#4a6f7c",
+  "#b7752a",
+  "#3d7a4c",
+  "#241d1a",
+];
+const CLOUD_COLORS_ON_DARK = [
+  "#f6c9c4",
+  "#bcd7e0",
+  "#f0c98a",
+  "#a9d6b5",
+  "#ffffff",
+];
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) {
+    return null;
+  }
+  const value = parseInt(match[1], 16);
+  return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+}
+
+/** Relativní jas podle WCAG; slouží k porovnání kontrastu. */
+function luminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) {
+    // Neznámý zápis (např. gradient) bereme jako světlý.
+    return 1;
+  }
+  const channels = [rgb.r, rgb.g, rgb.b].map((raw) => {
+    const c = raw / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrast(a: string, b: string): number {
+  const first = luminance(a);
+  const second = luminance(b);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+}
+
+/** Tmavý nebo bílý text — podle toho, co je na daném pozadí čitelnější. */
+export function inkOn(background: string): string {
+  return contrast("#241d1a", background) >= 4.5 ? "#241d1a" : "#ffffff";
+}
+
+/**
+ * Barvy slov vybrané k pozadí. Odstíny, které by na něm splynuly, vypadnou;
+ * kdyby nezbyla žádná, použije se prostě čitelná barva textu.
+ */
+function cloudPalette(background: string): string[] {
+  const base =
+    luminance(background) > 0.45 ? CLOUD_COLORS_ON_LIGHT : CLOUD_COLORS_ON_DARK;
+  const usable = base.filter((color) => contrast(color, background) >= 3);
+  return usable.length > 0 ? usable : [inkOn(background)];
+}
 
 /**
  * Word cloud: zadání nahoře, pod ním slova od publika. Čím častější slovo,
@@ -144,20 +203,24 @@ const CLOUD_COLORS = ["#dc5b5b", "#5f8794", "#d9913d", "#4f8f60", "#241d1a"];
 function WordCloudLayer({
   cloud,
   words,
+  background,
 }: {
   cloud: SlideWordCloud;
   words?: CloudWord[];
+  background: string;
 }) {
   const shown = (words ?? []).slice(0, CLOUD_MAX_WORDS);
   const max = shown.reduce((top, word) => Math.max(top, word.count), 0);
+  const palette = cloudPalette(background);
+  const ink = inkOn(background);
   return (
     <div
       className="absolute inset-0 flex flex-col"
       style={{ padding: cqw(36), gap: cqh(18) }}
     >
       <p
-        className="line-clamp-2 text-center font-bold break-words text-[#241d1a]"
-        style={{ fontSize: cqw(38), lineHeight: 1.15 }}
+        className="line-clamp-2 text-center font-bold break-words"
+        style={{ fontSize: cqw(38), lineHeight: 1.15, color: ink }}
       >
         {cloud.question || "Zadání"}
       </p>
@@ -166,7 +229,7 @@ function WordCloudLayer({
         style={{ gap: `${cqh(6)} ${cqw(18)}` }}
       >
         {shown.length === 0 ? (
-          <span className="text-neutral-400" style={{ fontSize: cqw(24) }}>
+          <span style={{ fontSize: cqw(24), color: ink, opacity: 0.55 }}>
             Slova se objeví, jak je publikum pošle.
           </span>
         ) : (
@@ -176,7 +239,7 @@ function WordCloudLayer({
               className="font-extrabold"
               style={{
                 fontSize: cqw(24 + (word.count / Math.max(max, 1)) * 48),
-                color: CLOUD_COLORS[index % CLOUD_COLORS.length],
+                color: palette[index % palette.length],
               }}
             >
               {word.text}
@@ -312,7 +375,11 @@ export default function SlideView({
         />
       )}
       {config.wordcloud && (
-        <WordCloudLayer cloud={config.wordcloud} words={words} />
+        <WordCloudLayer
+          cloud={config.wordcloud}
+          words={words}
+          background={config.background ?? "#ffffff"}
+        />
       )}
       {interaction && (
         <QuizLayer
