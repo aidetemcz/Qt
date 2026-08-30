@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
-import { renamePresentation } from "@/app/dashboard/actions";
+import { useMemo, useRef, useState, useTransition } from "react";
+import { renamePresentation, startPresentation } from "@/app/dashboard/actions";
 import QuestionEditor from "@/components/editor/QuestionEditor";
 import SlideEditorCanvas from "@/components/editor/SlideEditorCanvas";
 import SlideTypePicker from "@/components/editor/SlideTypePicker";
@@ -70,6 +70,7 @@ export default function Editor({
   const saveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
   );
+  const [isPresenting, startPresenting] = useTransition();
 
   const selected = slides.find((slide) => slide.id === selectedId) ?? null;
 
@@ -133,6 +134,38 @@ export default function Editor({
     setSlides((prev) => [...prev, data]);
     setSelectedId(data.id);
     setSaveState("saved");
+  }
+
+  /** Dopíše rozepsané změny hned. Prezentace se načítá z databáze, takže
+   *  bez toho by se promítla verze o vteřinu starší. */
+  async function flushSaves() {
+    const timers = saveTimers.current;
+    if (timers.size === 0) {
+      return;
+    }
+    const ids = [...timers.keys()];
+    for (const id of ids) {
+      clearTimeout(timers.get(id));
+    }
+    timers.clear();
+    setSaveState("saving");
+    const results = await Promise.all(
+      ids.map((id) => {
+        const pending = slides.find((s) => s.id === id);
+        return pending
+          ? supabase
+              .from("slides")
+              .update({ config: pending.config })
+              .eq("id", id)
+          : Promise.resolve({ error: null });
+      }),
+    );
+    setSaveState(results.some((r) => r.error) ? "error" : "saved");
+  }
+
+  async function present() {
+    await flushSaves();
+    startPresenting(() => startPresentation(presentation.id));
   }
 
   async function deleteSlide(slide: Slide) {
@@ -204,16 +237,31 @@ export default function Editor({
             className="min-w-0 flex-1 truncate rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-semibold text-neutral-900 transition-colors duration-150 outline-none hover:border-border hover:bg-background focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/20"
           />
         </div>
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs transition-colors duration-150 ${
-            saveState === "error"
-              ? "bg-red-50 font-medium text-danger"
-              : "text-muted"
-          } ${saveState === "saved" ? "animate-pop" : ""}`}
-          aria-live="polite"
-        >
-          {saveLabels[saveState]}
-        </span>
+        <div className="flex shrink-0 items-center gap-3">
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs transition-colors duration-150 ${
+              saveState === "error"
+                ? "bg-red-50 font-medium text-danger"
+                : "text-muted"
+            } ${saveState === "saved" ? "animate-pop" : ""}`}
+            aria-live="polite"
+          >
+            {saveLabels[saveState]}
+          </span>
+          <button
+            type="button"
+            onClick={present}
+            disabled={isPresenting || slides.length === 0}
+            title={
+              slides.length === 0
+                ? "Nejdřív přidej aspoň jeden slide"
+                : undefined
+            }
+            className="btn btn-primary btn-sm"
+          >
+            {isPresenting ? "Spouštím…" : "Prezentovat"}
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 flex-col md:min-h-0 md:flex-row">
