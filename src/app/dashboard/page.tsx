@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
 import DashboardContent from "@/components/DashboardContent";
 import Sidebar from "@/components/Sidebar";
@@ -32,9 +33,12 @@ export default async function DashboardPage() {
       <main className="flex-1 px-6 py-8">
         <div className="mx-auto w-full max-w-5xl">
           <div className="mb-5 flex items-center justify-end gap-3">
-            <span className="text-sm font-medium text-muted">
+            <Link
+              href="/profile"
+              className="text-sm font-medium text-muted transition-colors duration-150 hover:text-brand"
+            >
               {displayName}
-            </span>
+            </Link>
             <form action={signOut}>
               <button type="submit" className="btn btn-secondary btn-sm">
                 Odhlásit

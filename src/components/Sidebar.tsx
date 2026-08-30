@@ -23,9 +23,18 @@ export default function Sidebar() {
       >
         Domů
       </Link>
-      <span className="rounded-xl bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-dark">
+      <Link
+        href="/dashboard"
+        className="rounded-xl bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-dark"
+      >
         Prezentace
-      </span>
+      </Link>
+      <Link
+        href="/profile"
+        className="rounded-xl px-3 py-2 text-sm font-medium text-muted transition-colors duration-150 hover:bg-brand-50 hover:text-brand"
+      >
+        Profil
+      </Link>
       {disabledItems.map((item) => (
         <button
           key={item}
