@@ -1,8 +1,60 @@
 import Image from "next/image";
 import Link from "next/link";
 import NewPresentationButton from "@/components/NewPresentationButton";
+import SlideView from "@/components/slide/SlideView";
+import type { SlideConfig } from "@/lib/presentations";
 import { QUICK_CREATE } from "@/lib/slideTypes";
 import { createClient } from "@/lib/supabase/server";
+
+/** Obsah ukázkových slidů v hlavičce. */
+const demoQuiz: SlideConfig = {
+  quiz: {
+    question: "Kolik krajů má Česko?",
+    answers: [
+      { id: "a", text: "8" },
+      { id: "b", text: "14", correct: true },
+      { id: "c", text: "12" },
+      { id: "d", text: "16" },
+    ],
+  },
+};
+const demoCounts = { a: 2, b: 11, c: 4, d: 1 };
+
+const demoCloud: SlideConfig = {
+  background: "#f1f7f9",
+  wordcloud: { question: "Jedním slovem: jak se dnes cítíš?" },
+};
+const demoWords = [
+  { text: "natěšeně", count: 9 },
+  { text: "zvědavě", count: 6 },
+  { text: "v pohodě", count: 4 },
+  { text: "ospale", count: 3 },
+  { text: "nervózně", count: 2 },
+];
+
+const demoText: SlideConfig = {
+  background: "#fdf1ef",
+  elements: [
+    {
+      id: "heading",
+      kind: "heading",
+      text: "Co nás dnes čeká",
+      x: 72,
+      y: 120,
+      w: 816,
+      fontSize: 72,
+    },
+    {
+      id: "body",
+      kind: "body",
+      text: "Tři otázky, jedna anketa\na prostor na vaše dotazy.",
+      x: 72,
+      y: 260,
+      w: 816,
+      fontSize: 34,
+    },
+  ],
+};
 
 /** Vzhled dlaždice s typem — sdílený tlačítkem i odkazem na přihlášení. */
 const categoryClass =
@@ -101,34 +153,30 @@ export default async function HomePage() {
           )}
         </div>
 
-        {/* Stacked slide mockups — a peek at the product. */}
-        <div className="mt-20 flex w-full max-w-4xl items-end justify-center gap-5">
-          <div className="card hidden aspect-video w-56 -rotate-6 items-end p-5 sm:flex">
-            <div className="w-full space-y-2 text-left">
-              <div className="h-2.5 w-2/3 rounded-full bg-accent/60" />
-              <div className="h-2 w-full rounded-full bg-border" />
-              <div className="h-2 w-4/5 rounded-full bg-border" />
-            </div>
+        {/* Ukázka skutečných slidů — vykresluje je stejná komponenta jako
+            editor i prezentace, takže se nemůžou rozejít s produktem. */}
+        <div className="mt-20 flex w-full max-w-5xl items-center justify-center gap-4">
+          <div className="hidden w-64 -rotate-6 overflow-hidden rounded-card shadow-card ring-1 ring-border sm:block lg:w-72">
+            <SlideView config={demoCloud} words={demoWords} />
           </div>
-          <div className="card z-10 flex aspect-video w-72 flex-col justify-center gap-3 p-6 shadow-card-hover sm:w-80">
-            <div className="h-3.5 w-3/4 rounded-full bg-brand" />
-            <div className="h-2.5 w-full rounded-full bg-border" />
-            <div className="h-2.5 w-5/6 rounded-full bg-border" />
-            <div className="mt-2 flex gap-2">
-              <span className="rounded-full bg-brand-50 px-3 py-1 text-[0.625rem] font-bold text-brand">
-                LIVE
+
+          <div className="relative z-10 w-full max-w-sm shrink-0 lg:max-w-md">
+            <div className="overflow-hidden rounded-card shadow-pop ring-1 ring-border">
+              <SlideView config={demoQuiz} answerCounts={demoCounts} />
+            </div>
+            <div className="absolute -top-3 -right-2 flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 shadow-card ring-1 ring-border">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand motion-safe:animate-pulse" />
+              <span className="text-[0.625rem] font-bold tracking-wide text-brand uppercase">
+                Živě
               </span>
-              <span className="rounded-full bg-sunken px-3 py-1 font-mono text-[0.625rem] font-bold tracking-widest text-muted">
+              <span className="font-mono text-[0.625rem] font-bold tracking-widest text-muted">
                 042 317
               </span>
             </div>
           </div>
-          <div className="card hidden aspect-video w-56 rotate-6 items-end p-5 sm:flex">
-            <div className="w-full space-y-2 text-left">
-              <div className="h-2.5 w-1/2 rounded-full bg-brand/60" />
-              <div className="h-2 w-full rounded-full bg-border" />
-              <div className="h-2 w-3/5 rounded-full bg-border" />
-            </div>
+
+          <div className="hidden w-64 rotate-6 overflow-hidden rounded-card shadow-card ring-1 ring-border sm:block lg:w-72">
+            <SlideView config={demoText} />
           </div>
         </div>
       </main>
