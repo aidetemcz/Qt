@@ -1,14 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
+import NewPresentationButton from "@/components/NewPresentationButton";
+import { QUICK_CREATE } from "@/lib/slideTypes";
 import { createClient } from "@/lib/supabase/server";
 
-const categories = [
-  "Prezentace",
-  "Kvíz",
-  "Živá anketa",
-  "Word cloud",
-  "Otázky a odpovědi",
-];
+/** Vzhled dlaždice s typem — sdílený tlačítkem i odkazem na přihlášení. */
+const categoryClass =
+  "rounded-full border border-border bg-surface/80 px-4 py-2 text-sm font-medium text-muted shadow-sm transition-all duration-150 hover:border-brand/40 hover:text-brand disabled:opacity-50 motion-safe:hover:-translate-y-0.5";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -84,18 +82,23 @@ export default async function HomePage() {
           </button>
         </div>
 
+        {/* Klik založí prezentaci s daným slidem; kdo není přihlášený,
+            projde nejdřív přihlášením. */}
         <div className="mt-14 flex flex-wrap items-center justify-center gap-2">
-          {categories.map((category) => (
-            <button
-              key={category}
-              type="button"
-              disabled
-              title="Připravujeme"
-              className="cursor-not-allowed rounded-full border border-border bg-surface/80 px-4 py-2 text-sm font-medium text-muted shadow-sm"
-            >
-              {category}
-            </button>
-          ))}
+          {QUICK_CREATE.map((item) =>
+            user ? (
+              <NewPresentationButton
+                key={item.id}
+                slideType={item.id}
+                label={item.label}
+                className={categoryClass}
+              />
+            ) : (
+              <Link key={item.id} href="/login" className={categoryClass}>
+                {item.label}
+              </Link>
+            ),
+          )}
         </div>
 
         {/* Stacked slide mockups — a peek at the product. */}

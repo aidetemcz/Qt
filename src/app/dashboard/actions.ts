@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { slideTypeById } from "@/lib/slideTypes";
 import { createClient } from "@/lib/supabase/server";
 
 /** Random 6-digit numeric join code, e.g. "042317" (leading zeros allowed). */
@@ -44,15 +45,39 @@ export async function startPresentation(presentationId: string) {
   redirect(`/present/${sessionId}`);
 }
 
-export async function createPresentation() {
+/**
+ * Založí prezentaci. Se `slideType` jí rovnou přidá první slide toho typu
+ * a otevře editor — to je rychlé založení z hlavní stránky a z dashboardu.
+ */
+export async function createPresentation(slideType?: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const type = slideType ? slideTypeById(slideType) : undefined;
+
+  const { data, error } = await supabase
     .from("presentations")
-    .insert({ title: "Nová prezentace" });
-  if (error) {
-    throw new Error(`Failed to create presentation: ${error.message}`);
+    .insert({ title: "Nová prezentace" })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !data) {
+    throw new Error(`Failed to create presentation: ${error?.message}`);
   }
+
+  if (type?.available) {
+    const { error: slideError } = await supabase.from("slides").insert({
+      presentation_id: data.id,
+      position: 1,
+      type: type.id,
+      config: type.initialConfig,
+    });
+    if (slideError) {
+      throw new Error(`Failed to create slide: ${slideError.message}`);
+    }
+  }
+
   revalidatePath("/dashboard");
+  if (type) {
+    redirect(`/editor/${data.id}`);
+  }
 }
 
 export async function renamePresentation(id: string, title: string) {

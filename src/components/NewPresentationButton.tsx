@@ -8,9 +8,12 @@ const defaultClassName = "btn btn-primary";
 export default function NewPresentationButton({
   className = defaultClassName,
   label = "Nová prezentace",
+  slideType,
 }: {
   className?: string;
   label?: string;
+  /** Typ prvního slidu; s ním se rovnou otevře editor. */
+  slideType?: string;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -18,7 +21,7 @@ export default function NewPresentationButton({
     <button
       type="button"
       disabled={isPending}
-      onClick={() => startTransition(() => createPresentation())}
+      onClick={() => startTransition(() => createPresentation(slideType))}
       className={className}
     >
       {isPending ? "Vytvářím…" : label}

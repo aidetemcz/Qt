@@ -117,6 +117,18 @@ export const SLIDE_TYPE_GROUPS: SlideTypeGroup[] = [
 /** Slidy uložené pod dřívějším samostatným typem "image" jsou textové slidy. */
 const LEGACY_TYPE_ALIASES: Record<string, string> = { image: "text" };
 
+/**
+ * Nabídka rychlého založení na hlavní stránce a v dashboardu. Klik založí
+ * prezentaci rovnou s prvním slidem daného typu.
+ */
+export const QUICK_CREATE: { id: string; label: string }[] = [
+  { id: "text", label: "Prezentace" },
+  { id: "quiz", label: "Kvíz" },
+  { id: "poll", label: "Anketa" },
+  { id: "wordcloud", label: "Word cloud" },
+  { id: "qa", label: "Otázky a odpovědi" },
+];
+
 export function slideTypeById(id: string): SlideTypeDef | undefined {
   return SLIDE_TYPES.find((t) => t.id === (LEGACY_TYPE_ALIASES[id] ?? id));
 }
