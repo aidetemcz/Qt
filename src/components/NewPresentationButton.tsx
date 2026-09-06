@@ -3,17 +3,28 @@
 import { useTransition } from "react";
 import { createPresentation } from "@/app/dashboard/actions";
 
-export default function NewPresentationButton() {
+const defaultClassName = "btn btn-primary";
+
+export default function NewPresentationButton({
+  className = defaultClassName,
+  label = "Nová prezentace",
+  slideType,
+}: {
+  className?: string;
+  label?: string;
+  /** Typ prvního slidu; s ním se rovnou otevře editor. */
+  slideType?: string;
+}) {
   const [isPending, startTransition] = useTransition();
 
   return (
     <button
       type="button"
       disabled={isPending}
-      onClick={() => startTransition(() => createPresentation())}
-      className="rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-dark disabled:cursor-wait disabled:opacity-60"
+      onClick={() => startTransition(() => createPresentation(slideType))}
+      className={className}
     >
-      {isPending ? "Creating…" : "New presentation"}
+      {isPending ? "Vytvářím…" : label}
     </button>
   );
 }

@@ -4,7 +4,7 @@ import type { Presentation, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Editor · Q&Q",
+  title: "Editor · Qt",
 };
 
 export default async function EditorPage({

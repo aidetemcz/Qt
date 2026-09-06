@@ -1,8 +1,223 @@
 @import "tailwindcss";
 
+/* ── Design tokens (single source of truth) ────────────────────────────
+ * Direction: "warm studio" — cream canvas, coral/teal light blooms,
+ * expressive display type, pill controls and soft sticker-like cards.
+ * Brand hues are unchanged; everything is tuned from this file.
+ */
 @theme {
+  /* Brand — coral */
   --color-brand: #dc5b5b;
   --color-brand-dark: #c24747;
+  --color-brand-light: #f6c9c4;
+  --color-brand-50: #fdf1ef;
+
+  /* Accent — teal */
   --color-accent: #7da4b2;
   --color-accent-dark: #5f8794;
+  --color-accent-light: #d3e5ea;
+  --color-accent-50: #f1f7f9;
+
+  /* Surfaces & neutrals */
+  --color-background: #fbf6f2; /* warm cream canvas */
+  --color-surface: #ffffff;
+  --color-sunken: #f6efea;
+  --color-border: #ece0d8;
+  --color-ink: #241d1a; /* primary text — warm near-black */
+  --color-muted: #7a6c65; /* secondary text */
+
+  /* Status */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #e11d48;
+
+  /* Semantic radii — generous, friendly */
+  --radius-card: 1.5rem; /* 24px */
+  --radius-panel: 2rem; /* 32px */
+
+  /* Soft, warm layered shadows */
+  --shadow-card: 0 1px 2px rgb(74 46 34 / 0.05),
+    0 10px 24px -12px rgb(74 46 34 / 0.18);
+  --shadow-card-hover: 0 2px 6px rgb(74 46 34 / 0.07),
+    0 22px 44px -16px rgb(74 46 34 / 0.26);
+  --shadow-pop: 0 16px 40px -12px rgb(74 46 34 / 0.28);
+  --shadow-brand: 0 8px 20px -8px rgb(220 91 91 / 0.55);
+
+  /* Motion */
+  --animate-fade-in: fade-in 0.35s ease-out both;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pop: pop 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.94);
+  }
+  60% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@layer base {
+  body {
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.025em;
+  }
+}
+
+/* ── Shared UI primitives ────────────────────────────────────────────── */
+@layer components {
+  /* Ambient blooms painted behind every page. */
+  .app-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        60rem 40rem at 12% -10%,
+        rgb(220 91 91 / 0.16),
+        transparent 60%
+      ),
+      radial-gradient(
+        50rem 36rem at 92% 4%,
+        rgb(125 164 178 / 0.2),
+        transparent 62%
+      ),
+      radial-gradient(
+        46rem 34rem at 70% 108%,
+        rgb(220 91 91 / 0.1),
+        transparent 60%
+      );
+  }
+
+  .display {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.025em;
+  }
+
+  /* Coral highlighter swash behind a word. */
+  .marker {
+    position: relative;
+    display: inline-block;
+    isolation: isolate;
+  }
+  .marker::after {
+    content: "";
+    position: absolute;
+    left: -0.1em;
+    right: -0.1em;
+    bottom: 0.08em;
+    height: 0.32em;
+    border-radius: 999px;
+    background: var(--color-brand-light);
+    z-index: -1;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5
+      text-sm font-semibold transition-all duration-150 ease-out
+      focus-visible:ring-4 focus-visible:ring-brand/25 focus-visible:outline-none
+      disabled:pointer-events-none disabled:opacity-50
+      motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0;
+  }
+  .btn-sm {
+    @apply px-3.5 py-1.5 text-xs;
+  }
+  .btn-lg {
+    @apply px-7 py-3.5 text-base;
+  }
+  .btn-primary {
+    @apply bg-brand text-white shadow-brand hover:bg-brand-dark;
+  }
+  .btn-secondary {
+    @apply border border-border bg-surface text-ink shadow-sm
+      hover:border-brand/50 hover:text-brand hover:shadow-md;
+  }
+  .btn-ghost {
+    @apply text-muted hover:bg-brand-50 hover:text-brand;
+  }
+  .btn-danger {
+    @apply text-muted hover:bg-red-50 hover:text-danger;
+  }
+  .btn-disabled {
+    @apply cursor-not-allowed text-muted opacity-55;
+  }
+
+  .input {
+    @apply w-full rounded-2xl border border-border bg-surface px-4 py-3
+      text-sm text-ink transition-all duration-150
+      focus:border-brand focus:ring-4 focus:ring-brand/15 focus:outline-none;
+  }
+
+  .card {
+    @apply rounded-card border border-border bg-surface shadow-card
+      transition-all duration-200 ease-out;
+  }
+  .card-interactive {
+    @apply hover:border-brand/40 hover:shadow-card-hover
+      motion-safe:hover:-translate-y-1;
+  }
+
+  .panel {
+    @apply rounded-panel border border-border bg-surface shadow-card;
+  }
+
+  .topbar {
+    @apply border-b border-border/70 bg-background/70 backdrop-blur-xl;
+  }
+
+  .menu-surface {
+    @apply rounded-2xl border border-border bg-surface p-1.5 shadow-pop;
+  }
+  .menu-item {
+    @apply block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-ink
+      transition-colors duration-150 hover:bg-brand-50 hover:text-brand
+      disabled:opacity-50;
+  }
+
+  /* Small uppercase label above a section. */
+  .eyebrow {
+    @apply text-xs font-bold tracking-[0.16em] text-brand uppercase;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
