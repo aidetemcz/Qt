@@ -40,6 +40,7 @@ export default function Presenter({
   // aby se prezentace nedala zaseknout.
   const [started, setStarted] = useState(session.started ?? false);
   const [startError, setStartError] = useState(false);
+  const [endError, setEndError] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [words, setWords] = useState<WordEntry[]>([]);
@@ -251,10 +252,16 @@ export default function Presenter({
       return;
     }
     setIsPending(true);
-    await supabase
+    const { error } = await supabase
       .from("sessions")
       .update({ is_active: false })
       .eq("id", session.id);
+    if (error) {
+      // Dřív se odcházelo i po neúspěchu a relace zůstala běžet.
+      setIsPending(false);
+      setEndError(true);
+      return;
+    }
     router.push("/dashboard");
   }
 
@@ -384,6 +391,11 @@ export default function Presenter({
         </>
       )}
 
+      {endError && (
+        <p className="relative z-10 px-6 pb-5 text-center text-xs text-white/60">
+          Prezentaci se nepodařilo ukončit. Zkus to prosím znovu.
+        </p>
+      )}
       {(revealError || startError) && (
         <p className="relative z-10 px-6 pb-5 text-center text-xs text-white/60">
           {revealError

@@ -31,17 +31,18 @@ export default async function HomePage() {
               priority
             />
           </Link>
+          {/* Zatím to nikam nevede, tak je to i vidět — ne jen v bublině. */}
           <nav className="hidden items-center gap-1 sm:flex">
             {["Šablony", "Funkce", "Ceník"].map((item) => (
-              <button
+              <span
                 key={item}
-                type="button"
-                disabled
-                title="Připravujeme"
-                className="btn btn-disabled"
+                className="flex cursor-default items-center gap-1.5 px-3 py-2 text-sm font-medium text-neutral-400"
               >
                 {item}
-              </button>
+                <span className="rounded-full bg-sunken px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-wide text-muted uppercase">
+                  brzy
+                </span>
+              </span>
             ))}
           </nav>
           <div className="flex items-center gap-1.5">
@@ -73,14 +74,9 @@ export default async function HomePage() {
           <Link href="/dashboard" className="btn btn-primary btn-lg">
             Moje prezentace
           </Link>
-          <button
-            type="button"
-            disabled
-            title="Připravujeme"
-            className="btn btn-secondary btn-lg btn-disabled"
-          >
-            Procházet šablony
-          </button>
+          <Link href="/join" className="btn btn-secondary btn-lg">
+            Připojit se do místnosti
+          </Link>
         </div>
 
         {/* Klik založí prezentaci s daným slidem; kdo není přihlášený,

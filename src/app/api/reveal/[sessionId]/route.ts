@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Session, Slide } from "@/lib/presentations";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 // Odpovědi se nesmí cachovat, mění se v průběhu prezentace.
@@ -15,7 +16,7 @@ export async function GET(
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
   const { sessionId } = await params;
-  const supabase = await createClient();
+  const supabase = createAdminClient() ?? (await createClient());
 
   const { data: session } = await supabase
     .from("sessions")

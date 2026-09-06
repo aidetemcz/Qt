@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Player from "@/components/play/Player";
 import type { Session, Slide, SlideQuiz } from "@/lib/presentations";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -43,7 +44,9 @@ export default async function PlayPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
-  const supabase = await createClient();
+  // Slidy jsou v databázi čitelné jen pro vlastníka prezentace. Účastníkovi je
+  // proto načte server a pošle mu je bez příznaku správné odpovědi.
+  const supabase = createAdminClient() ?? (await createClient());
 
   // Read the initial current_position from the database so a late joiner lands
   // on the current slide immediately, not only after the next realtime event.
