@@ -9,6 +9,27 @@
 -- Nově je čtení těchto tabulek jen pro vlastníka prezentace; účastníkům data
 -- podává server, který z kvízu správnou odpověď odstraní.
 
+-- 0) Nejdřív pryč se VŠEMI stávajícími pravidly na těchto tabulkách.
+-- Pravidla se sčítají, takže jediné zapomenuté "using (true)" (třeba
+-- vyklikané kdysi v Supabase) by omezení níž úplně vyřadilo z hry.
+do $$
+declare
+  pol record;
+begin
+  for pol in
+    select tablename, policyname
+    from pg_policies
+    where schemaname = 'public'
+      and tablename in (
+        'presentations', 'slides', 'sessions', 'participants'
+      )
+  loop
+    execute format(
+      'drop policy %I on public.%I', pol.policyname, pol.tablename
+    );
+  end loop;
+end $$;
+
 alter table public.presentations enable row level security;
 alter table public.slides enable row level security;
 alter table public.sessions enable row level security;
