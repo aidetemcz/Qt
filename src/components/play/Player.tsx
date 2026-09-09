@@ -7,6 +7,7 @@ import SlideView, {
   QUIZ_ANSWER_STYLES,
   QA_PER_PARTICIPANT,
   QA_TEXT_MAX,
+  scaleValues,
   WORD_MAX,
   WORDS_PER_PARTICIPANT,
 } from "@/components/slide/SlideView";
@@ -69,6 +70,8 @@ export default function Player({
   // Slova poslaná do word cloudu, podle slidu.
   const [sentWords, setSentWords] = useState<Record<string, string[]>>({});
   const [word, setWord] = useState("");
+  // Rozkliknuté možnosti u ankety s víc odpověďmi, dokud se neodešlou.
+  const [picks, setPicks] = useState<string[]>([]);
 
   // localStorage se čte až po připojení komponenty, jinak by se rozešel se
   // serverovým renderem.
@@ -116,6 +119,10 @@ export default function Player({
   const quiz = slide ? getInteraction(slide.config) : null;
   // Odkrytí platí jen pro slide, u kterého ho přednášející zapnul.
   const revealed = reveal.on && reveal.position === clamped;
+
+  const slideId = slide?.id;
+  // Na jiném slidu začíná výběr znovu.
+  useEffect(() => setPicks([]), [slideId]);
 
   // Po odkrytí si správnou odpověď vyzvedneme; server ji vydá jen pro právě
   // promítaný slide a jen když je opravdu odkrytá. Anketa žádnou nemá.
@@ -172,6 +179,8 @@ export default function Player({
       return;
     }
     setSending(true);
+    // Víc možností se ukládá do jednoho hlasu ("a,c"), aby dál platilo
+    // omezení jeden hlas na slide a nešlo hlasovat opakovaně.
     const { error } = await supabase.from("answers").insert({
       session_id: session.id,
       slide_id: slide.id,
@@ -218,7 +227,11 @@ export default function Player({
   }
 
   const myAnswer = slide ? picked[slide.id] : undefined;
+  const multi = quiz?.kind === "poll" && !!quiz.multi;
+  // Před odesláním se ukazují rozkliknuté, potom to, co se uložilo.
+  const chosen = myAnswer !== undefined ? myAnswer.split(",") : picks;
   const cloud = slide?.config.wordcloud;
+  const scale = slide?.config.scale;
   const qa = slide?.config.qa;
   const myWords = slide ? (sentWords[slide.id] ?? []) : [];
   const wordsLeft =
@@ -270,6 +283,48 @@ export default function Player({
             <p className="text-2xl font-extrabold text-white">Jsi ve hře!</p>
             <p className="mt-3 text-sm text-white/50">
               Počkej, až přednášející prezentaci spustí.
+            </p>
+          </div>
+        ) : scale && slide ? (
+          <div key={slide.id} className="animate-fade-in w-full max-w-md">
+            <p className="text-center text-lg font-bold text-white">
+              {scale.question}
+            </p>
+
+            <div className="mt-6 flex gap-2">
+              {scaleValues(scale).map((value, index) => {
+                const id = String(value);
+                const mine = chosen.includes(id);
+                const style =
+                  QUIZ_ANSWER_STYLES[index % QUIZ_ANSWER_STYLES.length];
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => pick(id)}
+                    disabled={myAnswer !== undefined || sending}
+                    style={{ background: style.color }}
+                    className={`flex-1 rounded-2xl py-5 text-lg font-extrabold text-white transition-all duration-150 ${
+                      myAnswer !== undefined && !mine ? "opacity-40" : ""
+                    } ${mine ? "ring-4 ring-white" : ""} ${
+                      myAnswer !== undefined
+                        ? ""
+                        : "motion-safe:hover:-translate-y-0.5"
+                    }`}
+                  >
+                    {value}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 flex justify-between text-xs text-white/50">
+              <span>{scale.minLabel ?? ""}</span>
+              <span>{scale.maxLabel ?? ""}</span>
+            </div>
+
+            <p className="mt-5 text-center text-sm text-white/60">
+              {myAnswer !== undefined ? "Hlas odeslán." : "Vyber hodnotu."}
             </p>
           </div>
         ) : qa && slide ? (
@@ -386,23 +441,33 @@ export default function Player({
                 .map((answer, index) => {
                   const style =
                     QUIZ_ANSWER_STYLES[index % QUIZ_ANSWER_STYLES.length];
-                  const mine = myAnswer === answer.id;
+                  const mine = chosen.includes(answer.id);
                   const isCorrect = correctIds.includes(answer.id);
                   // Po odeslání se ostatní ztlumí; po odkrytí i špatné.
                   const dimmed = correctIds.length
                     ? !isCorrect
-                    : !!myAnswer && !mine;
+                    : myAnswer !== undefined && !mine;
                   return (
                     <button
                       key={answer.id}
                       type="button"
-                      onClick={() => pick(answer.id)}
-                      disabled={!!myAnswer || sending}
+                      onClick={() =>
+                        multi
+                          ? setPicks((prev) =>
+                              prev.includes(answer.id)
+                                ? prev.filter((id) => id !== answer.id)
+                                : [...prev, answer.id],
+                            )
+                          : pick(answer.id)
+                      }
+                      disabled={myAnswer !== undefined || sending}
                       style={{ background: style.color }}
                       className={`flex items-center gap-3 rounded-2xl px-5 py-6 text-left text-lg font-semibold text-white transition-all duration-150 ${
                         dimmed ? "opacity-40" : "opacity-100"
                       } ${mine ? "ring-4 ring-white" : ""} ${
-                        myAnswer ? "" : "motion-safe:hover:-translate-y-0.5"
+                        myAnswer !== undefined
+                          ? ""
+                          : "motion-safe:hover:-translate-y-0.5"
                       }`}
                     >
                       <span aria-hidden>{style.glyph}</span>
@@ -413,6 +478,17 @@ export default function Player({
                 })}
             </div>
 
+            {multi && myAnswer === undefined && (
+              <button
+                type="button"
+                onClick={() => pick([...picks].sort().join(","))}
+                disabled={picks.length === 0 || sending}
+                className="mt-4 w-full rounded-full bg-brand px-5 py-3 font-semibold text-white shadow-brand transition-all duration-150 hover:bg-brand-dark disabled:opacity-40 motion-safe:hover:-translate-y-0.5"
+              >
+                Odeslat {picks.length > 0 ? `(${picks.length})` : ""}
+              </button>
+            )}
+
             <p className="mt-5 text-center text-sm text-white/60">
               {correctIds.length
                 ? myAnswer
@@ -420,13 +496,15 @@ export default function Player({
                     ? "Správně!"
                     : "Tentokrát vedle."
                   : "Nestihl jsi odpovědět."
-                : myAnswer
+                : myAnswer !== undefined
                   ? quiz.kind === "quiz"
                     ? "Odpověď odeslána."
                     : "Hlas odeslán."
                   : quiz.kind === "quiz"
                     ? "Vyber odpověď."
-                    : "Vyber možnost."}
+                    : multi
+                      ? "Vyber jednu nebo víc možností a odešli."
+                      : "Vyber možnost."}
             </p>
           </div>
         ) : slide ? (

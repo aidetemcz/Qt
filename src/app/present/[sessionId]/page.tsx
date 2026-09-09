@@ -1,4 +1,6 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import QRCode from "qrcode";
 import Presenter from "@/components/present/Presenter";
 import type { Presentation, Session, Slide } from "@/lib/presentations";
 import { createClient } from "@/lib/supabase/server";
@@ -41,11 +43,25 @@ export default async function PresentPage({
       .returns<Slide[]>(),
   ]);
 
+  // Adresu na připojení i QR kód skládá server — účastníci si ho načtou
+  // z plátna, takže se nemusí trefovat do šestimístného kódu.
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("host") ?? "";
+  const protocol = host.startsWith("localhost") ? "http" : "https";
+  const joinUrl = `${protocol}://${host}/join?kod=${session.code}`;
+  const qrSvg = await QRCode.toString(joinUrl, {
+    type: "svg",
+    margin: 0,
+    color: { dark: "#241d1a", light: "#00000000" },
+  });
+
   return (
     <Presenter
       session={session}
       title={presentationResult.data?.title ?? ""}
       slides={slidesResult.data ?? []}
+      joinHost={host}
+      qrSvg={qrSvg}
     />
   );
 }

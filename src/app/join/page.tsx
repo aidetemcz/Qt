@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,19 @@ export default function JoinPage() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Odkaz z QR kódu nese kód v adrese, tak ho předvyplníme. Čte se přímo
+  // z adresy, aby stránka nepotřebovala Suspense a zůstala statická.
+  useEffect(() => {
+    const fromLink = (
+      new URLSearchParams(window.location.search).get("kod") ?? ""
+    )
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    if (fromLink) {
+      setCode(fromLink);
+    }
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

@@ -7,6 +7,7 @@ import QuestionEditor from "@/components/editor/QuestionEditor";
 import SlideEditorCanvas from "@/components/editor/SlideEditorCanvas";
 import SlideTypePicker from "@/components/editor/SlideTypePicker";
 import PromptEditor from "@/components/editor/PromptEditor";
+import ScaleEditor from "@/components/editor/ScaleEditor";
 import SlideView, {
   getElements,
   getInteraction,
@@ -34,6 +35,9 @@ function snippet(config: SlideConfig): string {
   }
   if (config.qa) {
     return config.qa.question.trim() || "Otázky a odpovědi";
+  }
+  if (config.scale) {
+    return config.scale.question.trim() || "Škála";
   }
   const interaction = getInteraction(config);
   if (interaction) {
@@ -364,7 +368,13 @@ export default function Editor({
               />
             </div>
           ) : selected ? (
-            selected.config.wordcloud || selected.config.qa ? (
+            selected.config.scale ? (
+              <ScaleEditor
+                key={selected.id}
+                config={selected.config}
+                onChange={(config) => updateConfig(selected.id, config)}
+              />
+            ) : selected.config.wordcloud || selected.config.qa ? (
               <PromptEditor
                 key={selected.id}
                 kind={selected.config.wordcloud ? "wordcloud" : "qa"}
