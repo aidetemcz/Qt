@@ -170,6 +170,17 @@ export default function PresentationCard({
                   role="menuitem"
                   onClick={() => {
                     setMenuOpen(false);
+                    router.push(`/results/${presentation.id}`);
+                  }}
+                  className={menuItem}
+                >
+                  Výsledky
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
                     setIsEditing(true);
                   }}
                   className={menuItem}
