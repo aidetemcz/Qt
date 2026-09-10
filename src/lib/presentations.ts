@@ -44,10 +44,21 @@ export interface QuizAnswer {
 export interface SlideQuiz {
   question: string;
   answers: QuizAnswer[];
+  /** Anketa: smí se vybrat víc možností. */
+  multi?: boolean;
 }
 
 /** Anketa: stejná otázka a možnosti jako kvíz, jen bez správné odpovědi. */
 export type SlidePoll = SlideQuiz;
+
+/** Škála: tvrzení a rozsah, ve kterém publikum volí číslo. */
+export interface SlideScale {
+  question: string;
+  min: number;
+  max: number;
+  minLabel?: string;
+  maxLabel?: string;
+}
 
 /** Word cloud: jen zadání, slova posílá publikum. */
 export interface SlideWordCloud {
@@ -68,6 +79,8 @@ export interface SlideConfig {
   wordcloud?: SlideWordCloud;
   /** Zadání pro otázky od publika; jen na slidech tohoto typu. */
   qa?: SlideQa;
+  /** Škála; jen na slidech tohoto typu. */
+  scale?: SlideScale;
   /** Slide background colour set from the settings panel. */
   background?: string;
   /** Full-bleed image behind the text boxes. */

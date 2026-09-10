@@ -70,9 +70,26 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     },
   },
   {
+    id: "scale",
+    label: "Škála",
+    description: "Publikum volí číslo na stupnici",
+    group: "Interakce",
+    glyph: "▥",
+    available: true,
+    initialConfig: {
+      scale: {
+        question: "",
+        min: 1,
+        max: 5,
+        minLabel: "Vůbec",
+        maxLabel: "Naprosto",
+      },
+    },
+  },
+  {
     id: "poll",
     label: "Anketa",
-    description: "Hlasování bez správné odpovědi",
+    description: "Hlasování o jedné i více možnostech",
     group: "Interakce",
     glyph: "▤",
     available: true,
@@ -125,6 +142,7 @@ export const QUICK_CREATE: { id: string; label: string }[] = [
   { id: "text", label: "Prezentace" },
   { id: "quiz", label: "Kvíz" },
   { id: "poll", label: "Anketa" },
+  { id: "scale", label: "Škála" },
   { id: "wordcloud", label: "Word cloud" },
   { id: "qa", label: "Otázky a odpovědi" },
 ];

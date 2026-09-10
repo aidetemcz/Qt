@@ -26,6 +26,19 @@ import type {
 const clamp = (v: number, min: number, max: number) =>
   Math.max(min, Math.min(v, max));
 
+/**
+ * Doladí výšku pole podle obsahu. Bez toho zůstane pole vysoké na jeden
+ * řádek, a po Enteru se dřív napsaný text schová nad horní okraj — vypadá
+ * to, že zmizel.
+ */
+function autoGrow(field: HTMLTextAreaElement | null) {
+  if (!field) {
+    return;
+  }
+  field.style.height = "auto";
+  field.style.height = `${field.scrollHeight}px`;
+}
+
 type Interaction = {
   mode: "move" | "resize";
   id: string;
@@ -231,12 +244,14 @@ export default function SlideEditorCanvas({
                 {isEditing ? (
                   <textarea
                     autoFocus
+                    ref={autoGrow}
                     value={el.text}
                     maxLength={el.kind === "heading" ? HEADING_MAX : BODY_MAX}
                     onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) =>
-                      patchElement(el.id, { text: e.target.value })
-                    }
+                    onChange={(e) => {
+                      autoGrow(e.currentTarget);
+                      patchElement(el.id, { text: e.target.value });
+                    }}
                     onBlur={() => setEditingId(null)}
                     rows={1}
                     className={`block w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-[color:inherit] outline-none [font-size:inherit] [font-weight:inherit] [text-align:inherit] ${elementClass(el.kind)}`}

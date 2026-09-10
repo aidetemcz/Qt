@@ -21,10 +21,16 @@ export default function Presenter({
   session,
   title,
   slides,
+  joinHost,
+  qrSvg,
 }: {
   session: Session;
   title: string;
   slides: Slide[];
+  /** Adresa, na které účastníci najdou připojení. */
+  joinHost: string;
+  /** QR kód s odkazem na připojení, vygenerovaný na serveru. */
+  qrSvg: string;
 }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -146,7 +152,10 @@ export default function Presenter({
   const answerCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const answer of slideAnswers) {
-      counts[answer.answer_id] = (counts[answer.answer_id] ?? 0) + 1;
+      // Anketa s víc odpověďmi má v jednom hlasu "a,c".
+      for (const id of answer.answer_id.split(",")) {
+        counts[id] = (counts[id] ?? 0) + 1;
+      }
     }
     return counts;
   }, [slideAnswers]);
@@ -305,6 +314,8 @@ export default function Presenter({
       {!started ? (
         <Lobby
           code={session.code}
+          joinHost={joinHost}
+          qrSvg={qrSvg}
           participants={participants}
           onStart={startPresenting}
           isPending={isPending}
@@ -320,7 +331,9 @@ export default function Presenter({
                 <SlideView
                   config={slide.config}
                   showCorrect={revealed}
-                  answerCounts={interaction ? answerCounts : undefined}
+                  answerCounts={
+                    interaction || slide.config.scale ? answerCounts : undefined
+                  }
                   words={cloudWords}
                   questions={slideQuestions}
                   questionPage={qaPage}
@@ -344,7 +357,7 @@ export default function Presenter({
             </button>
             <span className="min-w-[8rem] text-center font-mono text-xs tracking-widest text-white/45 uppercase">
               {total === 0 ? "0 / 0" : `${clamped + 1} / ${total}`}
-              {interaction && (
+              {(interaction || slide?.config.scale) && (
                 <span className="mt-1 block normal-case">
                   {slideAnswers.length} / {participants.length} odpovědělo
                 </span>

@@ -4,6 +4,7 @@ import type {
   SlideElement,
   SlideQa,
   SlideQuiz,
+  SlideScale,
   SlideWordCloud,
 } from "@/lib/presentations";
 
@@ -12,7 +13,8 @@ export const HEADING_MAX = 120;
 export const BODY_MAX = 800;
 export const QUESTION_MAX = 200;
 export const ANSWER_MAX = 80;
-export const QUIZ_MAX_ANSWERS = 4;
+export const QUIZ_MAX_ANSWERS = 6;
+export const QUIZ_MIN_ANSWERS = 2;
 
 /** Colour and shape of each answer slot, shared by the editor and the view. */
 export const QUIZ_ANSWER_STYLES = [
@@ -20,6 +22,8 @@ export const QUIZ_ANSWER_STYLES = [
   { color: "#5f8794", glyph: "◆" },
   { color: "#d9913d", glyph: "●" },
   { color: "#4f8f60", glyph: "■" },
+  { color: "#7a5ea8", glyph: "★" },
+  { color: "#b5546f", glyph: "✚" },
 ];
 
 /** An empty quiz, used when a quiz slide has no content yet. */
@@ -263,6 +267,128 @@ function WordCloudLayer({
   );
 }
 
+/** Hodnoty škály, tedy min..max včetně krajů. */
+export function scaleValues(scale: SlideScale): number[] {
+  const from = Math.round(scale.min);
+  const to = Math.round(scale.max);
+  const count = Math.max(2, Math.min(to - from + 1, 11));
+  return Array.from({ length: count }, (_, index) => from + index);
+}
+
+/** Průměr voleb na škále, nebo null když ještě nikdo nehlasoval. */
+export function scaleAverage(
+  scale: SlideScale,
+  counts?: Record<string, number>,
+): number | null {
+  if (!counts) {
+    return null;
+  }
+  let sum = 0;
+  let total = 0;
+  for (const value of scaleValues(scale)) {
+    const votes = counts[String(value)] ?? 0;
+    sum += value * votes;
+    total += votes;
+  }
+  return total > 0 ? sum / total : null;
+}
+
+/**
+ * Škála: tvrzení nahoře, pod ním stupnice. Přednášejícímu navíc vyrostou
+ * sloupce podle počtu voleb a dopíše se průměr.
+ */
+function ScaleLayer({
+  scale,
+  answerCounts,
+  background,
+}: {
+  scale: SlideScale;
+  answerCounts?: Record<string, number>;
+  background: string;
+}) {
+  const values = scaleValues(scale);
+  const top = values.reduce(
+    (best, value) => Math.max(best, answerCounts?.[String(value)] ?? 0),
+    0,
+  );
+  const average = scaleAverage(scale, answerCounts);
+  const ink = inkOn(background);
+
+  return (
+    <div
+      className="absolute inset-0 flex flex-col"
+      style={{ padding: cqw(36), gap: cqh(18) }}
+    >
+      <div
+        className="flex flex-1 items-center justify-center rounded-2xl bg-white/95 text-center font-bold text-[#241d1a] shadow-sm"
+        style={{ padding: cqw(20), fontSize: cqw(40), lineHeight: 1.15 }}
+      >
+        <span className="line-clamp-3 break-words">
+          {scale.question || "Tvrzení"}
+        </span>
+      </div>
+
+      <div style={{ height: cqh(190) }} className="flex flex-col">
+        <div className="flex flex-1 items-end" style={{ gap: cqw(10) }}>
+          {values.map((value, index) => {
+            const votes = answerCounts?.[String(value)] ?? 0;
+            const style = QUIZ_ANSWER_STYLES[index % QUIZ_ANSWER_STYLES.length];
+            return (
+              <div
+                key={value}
+                className="flex flex-1 flex-col items-center justify-end"
+                style={{ gap: cqh(6) }}
+              >
+                {answerCounts && (
+                  <span style={{ fontSize: cqw(20), color: ink }}>
+                    {votes > 0 ? votes : ""}
+                  </span>
+                )}
+                <div
+                  className="w-full rounded-lg"
+                  style={{
+                    background: style.color,
+                    // Bez hlasů je z dlaždice aspoň podstavec se číslem.
+                    height: answerCounts
+                      ? cqh(28 + (top > 0 ? (votes / top) * 84 : 0))
+                      : cqh(56),
+                  }}
+                />
+                <span
+                  className="font-extrabold"
+                  style={{ fontSize: cqw(26), color: ink }}
+                >
+                  {value}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div
+          className="flex items-center justify-between"
+          style={{ marginTop: cqh(6) }}
+        >
+          <span style={{ fontSize: cqw(20), color: ink, opacity: 0.6 }}>
+            {scale.minLabel ?? ""}
+          </span>
+          {average !== null && (
+            <span
+              className="font-bold"
+              style={{ fontSize: cqw(22), color: ink }}
+            >
+              Průměr {average.toFixed(1).replace(".", ",")}
+            </span>
+          )}
+          <span style={{ fontSize: cqw(20), color: ink, opacity: 0.6 }}>
+            {scale.maxLabel ?? ""}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Otázky a odpovědi: zadání nahoře, pod ním otázky od publika. Vejde se jich
  * jen pár, takže se ukazují ty nejnovější a zbytek se jen spočítá.
@@ -380,7 +506,7 @@ function QuizLayer({
           style={{
             gap: cqw(14),
             height: cqh(210),
-            gridTemplateRows: answers.length > 2 ? "1fr 1fr" : "1fr",
+            gridTemplateRows: `repeat(${Math.ceil(answers.length / 2)}, 1fr)`,
           }}
         >
           {answers.map((answer, index) => {
@@ -481,6 +607,13 @@ export default function SlideView({
           background={config.background ?? "#ffffff"}
         />
       )}
+      {config.scale && (
+        <ScaleLayer
+          scale={config.scale}
+          answerCounts={answerCounts}
+          background={config.background ?? "#ffffff"}
+        />
+      )}
       {config.qa && (
         <QaLayer
           qa={config.qa}
@@ -500,6 +633,7 @@ export default function SlideView({
       {!interaction &&
         !config.wordcloud &&
         !config.qa &&
+        !config.scale &&
         elements.length === 0 &&
         !config.image?.src && (
           <div

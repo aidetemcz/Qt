@@ -10,6 +10,8 @@ import {
   type InteractionKind,
   QUESTION_MAX,
   QUIZ_ANSWER_STYLES,
+  QUIZ_MAX_ANSWERS,
+  QUIZ_MIN_ANSWERS,
 } from "@/components/slide/SlideView";
 import type { QuizAnswer, SlideConfig, SlideQuiz } from "@/lib/presentations";
 
@@ -33,8 +35,9 @@ export default function QuestionEditor({
 }) {
   const isQuiz = kind === "quiz";
   const quiz = (isQuiz ? config.quiz : config.poll) ?? emptyQuiz();
-  // U pevných možností se prázdné sloty nedoplňují.
   const answers = lockedAnswers ? (quiz.answers ?? []) : getQuizAnswers(quiz);
+  const canAdd = !lockedAnswers && answers.length < QUIZ_MAX_ANSWERS;
+  const canRemove = !lockedAnswers && answers.length > QUIZ_MIN_ANSWERS;
 
   function patchQuiz(patch: Partial<SlideQuiz>) {
     const next = { ...quiz, ...patch };
@@ -44,6 +47,22 @@ export default function QuestionEditor({
     patchQuiz({
       answers: answers.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     });
+  }
+  function addAnswer() {
+    if (!canAdd) {
+      return;
+    }
+    // Id se drží abecedy, ať zůstanou krátká a stabilní.
+    const used = new Set(answers.map((a) => a.id));
+    const next = "abcdef".split("").find((letter) => !used.has(letter));
+    if (next) {
+      patchQuiz({ answers: [...answers, { id: next, text: "" }] });
+    }
+  }
+  function removeAnswer(id: string) {
+    if (canRemove) {
+      patchQuiz({ answers: answers.filter((a) => a.id !== id) });
+    }
   }
   function toggleCorrect(id: string) {
     // U Pravda/Lež platí právě jedna možnost, jinde jich může být víc.
@@ -71,12 +90,33 @@ export default function QuestionEditor({
     <div className="flex min-h-0 w-full flex-1 flex-col lg:flex-row">
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-4 md:p-8">
         <div className="card mx-auto flex w-full max-w-4xl flex-wrap items-center gap-2 p-3">
+          {!isQuiz && !lockedAnswers && (
+            <button
+              type="button"
+              onClick={() => patchQuiz({ multi: !quiz.multi })}
+              aria-pressed={!!quiz.multi}
+              className={`btn btn-sm ${quiz.multi ? "btn-primary" : "btn-secondary"}`}
+            >
+              {quiz.multi ? "Víc odpovědí" : "Jedna odpověď"}
+            </button>
+          )}
+          {canAdd && (
+            <button
+              type="button"
+              onClick={addAnswer}
+              className="btn btn-secondary btn-sm"
+            >
+              + Možnost
+            </button>
+          )}
           <span className="text-xs text-muted">
             {lockedAnswers
               ? "Napiš tvrzení a kolečkem označ, jestli platí."
               : isQuiz
                 ? "Napiš otázku a odpovědi. Správnou označ kolečkem vpravo."
-                : "Napiš otázku a možnosti. Anketa nemá správnou odpověď, jen ukáže, jak kdo hlasoval."}
+                : quiz.multi
+                  ? "Publikum smí vybrat víc možností."
+                  : "Publikum vybere jednu možnost."}
           </span>
         </div>
 
@@ -121,7 +161,7 @@ export default function QuestionEditor({
               style={{
                 gap: cqw(14),
                 height: cqh(210),
-                gridTemplateRows: answers.length > 2 ? "1fr 1fr" : "1fr",
+                gridTemplateRows: `repeat(${Math.ceil(answers.length / 2)}, 1fr)`,
               }}
             >
               {answers.map((answer, index) => {
@@ -164,6 +204,22 @@ export default function QuestionEditor({
                         className="min-w-0 flex-1 bg-transparent font-semibold text-white outline-none placeholder:text-white/55"
                         style={{ fontSize: cqw(26) }}
                       />
+                    )}
+                    {canRemove && (
+                      <button
+                        type="button"
+                        onClick={() => removeAnswer(answer.id)}
+                        title="Odebrat možnost"
+                        aria-label={`Odebrat možnost ${index + 1}`}
+                        className="flex shrink-0 items-center justify-center rounded-full text-white/70 transition-colors duration-150 hover:bg-black/20 hover:text-white"
+                        style={{
+                          width: cqw(30),
+                          height: cqw(30),
+                          fontSize: cqw(20),
+                        }}
+                      >
+                        ×
+                      </button>
                     )}
                     {isQuiz && (
                       <button
