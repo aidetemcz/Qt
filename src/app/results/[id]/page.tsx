@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { endSession } from "@/app/results/actions";
 import Sidebar from "@/components/Sidebar";
 import type {
   Answer,
@@ -15,6 +16,9 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata = {
   title: "Výsledky · Qt",
 };
+
+/** Kolik posledních relací se vypisuje. Starší se do výběru nevejdou. */
+const RECENT_SESSIONS = 5;
 
 function formatWhen(iso: string): string {
   return new Date(iso).toLocaleString("cs-CZ", {
@@ -48,6 +52,7 @@ export default async function ResultsPage({
       .select("*")
       .eq("presentation_id", id)
       .order("created_at", { ascending: false })
+      .limit(RECENT_SESSIONS)
       .returns<Session[]>(),
   ]);
 
@@ -123,7 +128,10 @@ export default async function ResultsPage({
             </div>
           ) : (
             <>
-              <div className="mt-6 flex flex-wrap gap-2">
+              <p className="mt-6 text-xs text-muted">
+                Posledních {RECENT_SESSIONS} spuštění
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
                 {list.map((session) => {
                   const active = session.id === current?.id;
                   return (
@@ -157,12 +165,29 @@ export default async function ResultsPage({
                           : "účastníků"}
                       {current.is_active && " · relace ještě běží"}
                     </p>
-                    <a
-                      href={`/api/results/${current.id}/csv`}
-                      className="btn btn-primary btn-sm"
-                    >
-                      Stáhnout tabulku (CSV)
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {current.is_active && (
+                        <form
+                          action={async () => {
+                            "use server";
+                            await endSession(current.id, id);
+                          }}
+                        >
+                          <button
+                            type="submit"
+                            className="btn btn-secondary btn-sm"
+                          >
+                            Ukončit relaci
+                          </button>
+                        </form>
+                      )}
+                      <a
+                        href={`/api/results/${current.id}/csv`}
+                        className="btn btn-primary btn-sm"
+                      >
+                        Stáhnout tabulku (CSV)
+                      </a>
+                    </div>
                   </div>
 
                   <div className="mt-6 flex flex-col gap-4">
