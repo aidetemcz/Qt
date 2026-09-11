@@ -119,6 +119,14 @@ export function defaultColor(kind: SlideElement["kind"]): string {
   return kind === "heading" ? "#241d1a" : "#4b423d";
 }
 
+/** Výchozí rám vloženého obrázku, než se dopočítá podle jeho poměru stran. */
+export const DEFAULT_IMAGE_W = 420;
+export const DEFAULT_IMAGE_H = 280;
+/** Výška obrázkového prvku; text si výšku řídí sám podle obsahu. */
+export function elementHeight(el: SlideElement): number {
+  return el.h ?? DEFAULT_IMAGE_H;
+}
+
 /** Inline styles shared by the read-only view and the editor canvas. */
 export function elementStyle(el: SlideElement): React.CSSProperties {
   return {
@@ -275,6 +283,24 @@ export function scaleValues(scale: SlideScale): number[] {
   return Array.from({ length: count }, (_, index) => from + index);
 }
 
+/**
+ * Barva sloupce na škále. Stupnice je jedna veličina, ne sada nesouvisejících
+ * možností — proto se od kraje ke kraji přelévá jeden odstín, ne šest barev.
+ */
+const SCALE_FROM = "#edb7b7";
+const SCALE_TO = "#dc5b5b";
+
+export function scaleColor(index: number, count: number): string {
+  const from = hexToRgb(SCALE_FROM);
+  const to = hexToRgb(SCALE_TO);
+  if (!from || !to) {
+    return SCALE_TO;
+  }
+  const t = count > 1 ? index / (count - 1) : 1;
+  const mix = (a: number, b: number) => Math.round(a + (b - a) * t);
+  return `rgb(${mix(from.r, to.r)} ${mix(from.g, to.g)} ${mix(from.b, to.b)})`;
+}
+
 /** Průměr voleb na škále, nebo null když ještě nikdo nehlasoval. */
 export function scaleAverage(
   scale: SlideScale,
@@ -332,7 +358,6 @@ function ScaleLayer({
         <div className="flex flex-1 items-end" style={{ gap: cqw(10) }}>
           {values.map((value, index) => {
             const votes = answerCounts?.[String(value)] ?? 0;
-            const style = QUIZ_ANSWER_STYLES[index % QUIZ_ANSWER_STYLES.length];
             return (
               <div
                 key={value}
@@ -347,7 +372,7 @@ function ScaleLayer({
                 <div
                   className="w-full rounded-lg"
                   style={{
-                    background: style.color,
+                    background: scaleColor(index, values.length),
                     // Bez hlasů je z dlaždice aspoň podstavec se číslem.
                     height: answerCounts
                       ? cqh(28 + (top > 0 ? (votes / top) * 84 : 0))
@@ -643,21 +668,42 @@ export default function SlideView({
             Prázdný slide
           </div>
         )}
-      {elements.map((el) => (
-        <div
-          key={el.id}
-          className={`absolute whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
-          style={{
-            left: cqw(el.x),
-            top: cqh(el.y),
-            maxWidth: cqw(SLIDE_W - el.x),
-            fontSize: cqw(el.fontSize),
-            ...elementStyle(el),
-          }}
-        >
-          {el.text}
-        </div>
-      ))}
+      {elements.map((el) =>
+        el.kind === "image" ? (
+          el.src ? (
+            // eslint-disable-next-line @next/next/no-img-element -- arbitrary user URLs
+            <img
+              key={el.id}
+              src={el.src}
+              alt=""
+              draggable={false}
+              className="pointer-events-none absolute select-none"
+              style={{
+                left: cqw(el.x),
+                top: cqh(el.y),
+                width: cqw(el.w),
+                height: cqh(elementHeight(el)),
+                objectFit: el.fit ?? "contain",
+              }}
+            />
+          ) : null
+        ) : (
+          <div
+            key={el.id}
+            // Text se láme v šířce svého rámu, ne až u pravého okraje slidu.
+            className={`absolute whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
+            style={{
+              left: cqw(el.x),
+              top: cqh(el.y),
+              width: cqw(el.w),
+              fontSize: cqw(el.fontSize),
+              ...elementStyle(el),
+            }}
+          >
+            {el.text}
+          </div>
+        ),
+      )}
     </div>
   );
 }

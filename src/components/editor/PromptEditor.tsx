@@ -7,8 +7,9 @@ import type { SlideConfig } from "@/lib/presentations";
 
 /**
  * Editor slidu, kde autor zadává jen zadání a obsah přijde od publika —
- * word cloud a otázky a odpovědi. Zadání se píše rovnou do slidu (dvojklik),
- * stejně jako text na textovém slidu, takže plocha odpovídá prezentaci.
+ * word cloud a otázky a odpovědi. Zadání se píše rovnou do slidu (stačí na něj
+ * kliknout), stejně jako text na textovém slidu, takže plocha odpovídá
+ * prezentaci.
  */
 export default function PromptEditor({
   kind,
@@ -43,7 +44,7 @@ export default function PromptEditor({
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-4 md:p-8">
         <div className="card mx-auto flex w-full max-w-4xl flex-wrap items-center gap-2 p-3">
           <span className="text-xs text-muted">
-            Dvojklik na zadání ho upraví.{" "}
+            Klikni na zadání a uprav ho.{" "}
             {isCloud
               ? "Slova napíše publikum na svých zařízeních; nejčastější budou v oblaku největší."
               : "Otázky napíše publikum na svých zařízeních, na plátně se ukazují od nejnovější."}
@@ -88,8 +89,8 @@ export default function PromptEditor({
               />
             ) : (
               <p
-                onDoubleClick={() => setEditing(true)}
-                title="Dvojklik pro úpravu"
+                onClick={() => setEditing(true)}
+                title="Klikni pro úpravu"
                 className="line-clamp-2 cursor-text rounded-lg text-center font-bold break-words"
                 style={{
                   fontSize,

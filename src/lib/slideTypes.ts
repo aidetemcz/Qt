@@ -7,7 +7,8 @@ import type { SlideConfig } from "@/lib/presentations";
  * `slides.type`), a label, a group for the picker, a starting config and
  * flip `available` once its editor exists.
  */
-export type SlideTypeGroup = "Obsah" | "Interakce" | "Kvíz";
+// Slidy se dělí jen na to, jestli publikum jen kouká, nebo taky odpovídá.
+export type SlideTypeGroup = "Obsah" | "Interaktivní";
 
 export interface SlideTypeDef {
   id: string;
@@ -36,7 +37,7 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     id: "quiz",
     label: "Kvíz",
     description: "Otázka se čtyřmi odpověďmi",
-    group: "Kvíz",
+    group: "Interaktivní",
     glyph: "◆",
     available: true,
     initialConfig: {
@@ -55,7 +56,7 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     id: "truefalse",
     label: "Pravda / Lež",
     description: "Tvrzení a dvě možnosti",
-    group: "Kvíz",
+    group: "Interaktivní",
     glyph: "◑",
     available: true,
     // Kvíz s pevnými možnostmi; autor jen vybere, která platí.
@@ -73,7 +74,7 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     id: "scale",
     label: "Škála",
     description: "Publikum volí číslo na stupnici",
-    group: "Interakce",
+    group: "Interaktivní",
     glyph: "▥",
     available: true,
     initialConfig: {
@@ -90,7 +91,7 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     id: "poll",
     label: "Anketa",
     description: "Hlasování o jedné i více možnostech",
-    group: "Interakce",
+    group: "Interaktivní",
     glyph: "▤",
     available: true,
     initialConfig: {
@@ -109,7 +110,7 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     id: "wordcloud",
     label: "Word cloud",
     description: "Slova od publika v oblaku",
-    group: "Interakce",
+    group: "Interaktivní",
     glyph: "❋",
     available: true,
     initialConfig: { wordcloud: { question: "" } },
@@ -118,18 +119,14 @@ export const SLIDE_TYPES: SlideTypeDef[] = [
     id: "qa",
     label: "Otázky a odpovědi",
     description: "Publikum se ptá, ty odpovídáš",
-    group: "Interakce",
+    group: "Interaktivní",
     glyph: "?",
     available: true,
     initialConfig: { qa: { question: "" } },
   },
 ];
 
-export const SLIDE_TYPE_GROUPS: SlideTypeGroup[] = [
-  "Obsah",
-  "Kvíz",
-  "Interakce",
-];
+export const SLIDE_TYPE_GROUPS: SlideTypeGroup[] = ["Obsah", "Interaktivní"];
 
 /** Slidy uložené pod dřívějším samostatným typem "image" jsou textové slidy. */
 const LEGACY_TYPE_ALIASES: Record<string, string> = { image: "text" };

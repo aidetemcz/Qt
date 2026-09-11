@@ -91,14 +91,27 @@ export default function QuestionEditor({
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-4 md:p-8">
         <div className="card mx-auto flex w-full max-w-4xl flex-wrap items-center gap-2 p-3">
           {!isQuiz && !lockedAnswers && (
-            <button
-              type="button"
-              onClick={() => patchQuiz({ multi: !quiz.multi })}
-              aria-pressed={!!quiz.multi}
-              className={`btn btn-sm ${quiz.multi ? "btn-primary" : "btn-secondary"}`}
-            >
-              {quiz.multi ? "Víc odpovědí" : "Jedna odpověď"}
-            </button>
+            // Dvě tlačítka vedle sebe, ne jeden přepínač: u přepínače nebylo
+            // poznat, jestli popisek říká stav, nebo co se stane po kliknutí.
+            <div className="flex gap-1.5" role="group" aria-label="Počet voleb">
+              {[
+                { multi: false, label: "Jedna odpověď" },
+                { multi: true, label: "Víc odpovědí" },
+              ].map((option) => {
+                const active = !!quiz.multi === option.multi;
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    onClick={() => patchQuiz({ multi: option.multi })}
+                    aria-pressed={active}
+                    className={`btn btn-sm ${active ? "btn-primary" : "btn-secondary"}`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           )}
           {canAdd && (
             <button
