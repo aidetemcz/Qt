@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import JoinCodeOverlay from "@/components/present/JoinCodeOverlay";
 import Lobby from "@/components/present/Lobby";
 import SlideView, {
   type CloudWord,
@@ -52,6 +53,8 @@ export default function Presenter({
   const [words, setWords] = useState<WordEntry[]>([]);
   // Otázek bývá víc, než se na slide vejde; přednášející jimi listuje.
   const [qaPage, setQaPage] = useState(0);
+  // QR kód na vyžádání, pro ty, kdo ho v lobby nestihli naskenovat.
+  const [showJoin, setShowJoin] = useState(false);
 
   // Účastníci a jejich hlasy: jednou se načtou (kvůli reloadu uprostřed hry)
   // a dál přibývají realtimem.
@@ -114,6 +117,21 @@ export default function Presenter({
           setAnswers((prev) => {
             const next = payload.new as Answer;
             return prev.some((a) => a.id === next.id) ? prev : [...prev, next];
+          }),
+      )
+      .on(
+        "postgres_changes",
+        {
+          // Účastník smí svůj hlas přepsat, když se uklikl.
+          event: "UPDATE",
+          schema: "public",
+          table: "answers",
+          filter: `session_id=eq.${session.id}`,
+        },
+        (payload) =>
+          setAnswers((prev) => {
+            const next = payload.new as Answer;
+            return prev.map((a) => (a.id === next.id ? next : a));
           }),
       )
       .on(
@@ -346,7 +364,16 @@ export default function Presenter({
             )}
           </main>
 
-          <footer className="relative z-10 flex items-center justify-center gap-3 px-6 py-7">
+          <footer className="relative z-10 flex flex-wrap items-center justify-center gap-3 px-6 py-7">
+            {/* Vlevo dole, ať je po ruce, když se někdo nestihl připojit.
+                Na širokém plátně stojí stranou, aby neposunulo ovládání. */}
+            <button
+              type="button"
+              onClick={() => setShowJoin(true)}
+              className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 transition-all duration-150 hover:bg-white/15 hover:text-white motion-safe:hover:-translate-y-0.5 lg:absolute lg:bottom-7 lg:left-6"
+            >
+              Zobrazit QR kód
+            </button>
             <button
               type="button"
               onClick={() => move(-1)}
@@ -402,6 +429,15 @@ export default function Presenter({
             </button>
           </footer>
         </>
+      )}
+
+      {showJoin && (
+        <JoinCodeOverlay
+          code={session.code}
+          joinHost={joinHost}
+          qrSvg={qrSvg}
+          onClose={() => setShowJoin(false)}
+        />
       )}
 
       {endError && (

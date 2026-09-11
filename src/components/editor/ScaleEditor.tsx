@@ -7,7 +7,7 @@ import {
   cqw,
   inkOn,
   QUESTION_MAX,
-  QUIZ_ANSWER_STYLES,
+  scaleColor,
   scaleValues,
 } from "@/components/slide/SlideView";
 import type { SlideConfig, SlideScale } from "@/lib/presentations";
@@ -16,9 +16,9 @@ const LABEL_MAX = 24;
 const RANGES = [3, 4, 5, 7, 10];
 
 /**
- * Editor škály. Tvrzení a popisky krajů se píšou rovnou do slidu (dvojklik),
- * rozsah se vybírá nad plochou. Sloupce se v prezentaci narovnají podle hlasů,
- * tady stojí v základní výšce.
+ * Editor škály. Tvrzení a popisky krajů se píšou rovnou do slidu (stačí na ně
+ * kliknout), rozsah se vybírá nad plochou. Sloupce se v prezentaci narovnají
+ * podle hlasů, tady stojí v základní výšce.
  */
 export default function ScaleEditor({
   config,
@@ -62,7 +62,7 @@ export default function ScaleEditor({
             </button>
           ))}
           <span className="ml-auto text-xs text-muted">
-            Dvojklik na tvrzení ho upraví, popisky krajů se píšou pod stupnicí.
+            Klikni na tvrzení a uprav ho, popisky krajů se píšou pod stupnicí.
           </span>
         </div>
 
@@ -107,8 +107,8 @@ export default function ScaleEditor({
               />
             ) : (
               <div
-                onDoubleClick={() => setEditing(true)}
-                title="Dvojklik pro úpravu"
+                onClick={() => setEditing(true)}
+                title="Klikni pro úpravu"
                 className="flex flex-1 cursor-text items-center justify-center rounded-2xl bg-white/95 text-center font-bold text-[#241d1a] shadow-sm"
                 style={{
                   padding: cqw(20),
@@ -128,8 +128,6 @@ export default function ScaleEditor({
             <div style={{ height: cqh(190) }} className="flex flex-col">
               <div className="flex flex-1 items-end" style={{ gap: cqw(10) }}>
                 {values.map((value, index) => {
-                  const style =
-                    QUIZ_ANSWER_STYLES[index % QUIZ_ANSWER_STYLES.length];
                   return (
                     <div
                       key={value}
@@ -138,7 +136,10 @@ export default function ScaleEditor({
                     >
                       <div
                         className="w-full rounded-lg"
-                        style={{ background: style.color, height: cqh(56) }}
+                        style={{
+                          background: scaleColor(index, values.length),
+                          height: cqh(56),
+                        }}
                       />
                       <span
                         className="font-extrabold"

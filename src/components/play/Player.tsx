@@ -7,6 +7,7 @@ import SlideView, {
   QUIZ_ANSWER_STYLES,
   QA_PER_PARTICIPANT,
   QA_TEXT_MAX,
+  scaleColor,
   scaleValues,
   WORD_MAX,
   WORDS_PER_PARTICIPANT,
@@ -34,6 +35,38 @@ function loadParticipant(sessionId: string): StoredParticipant | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Nabídka přehlasování pod odeslanou odpovědí. Uklikne se každý; dokud
+ * přednášející neodkryl správnou odpověď, jde volbu vzít zpět.
+ */
+function ChangeVote({
+  show,
+  onChange,
+  error,
+}: {
+  show: boolean;
+  onChange: () => void;
+  error: string | null;
+}) {
+  if (!show && !error) {
+    return null;
+  }
+  return (
+    <div className="mt-3 text-center">
+      {show && (
+        <button
+          type="button"
+          onClick={onChange}
+          className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white/70 transition-colors duration-150 hover:border-white/40 hover:text-white"
+        >
+          Změnit odpověď
+        </button>
+      )}
+      {error && <p className="mt-3 text-sm text-white/70">{error}</p>}
+    </div>
+  );
 }
 
 export default function Player({
@@ -65,6 +98,7 @@ export default function Player({
   // Vybraná odpověď podle slidu, aby se nedalo hlasovat dvakrát.
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
+  const [voteError, setVoteError] = useState<string | null>(null);
   // Správné odpovědi dorazí až po odkrytí, ze serveru — v configu je nemáme.
   const [correctIds, setCorrectIds] = useState<string[]>([]);
   // Slova poslaná do word cloudu, podle slidu.
@@ -179,20 +213,39 @@ export default function Player({
       return;
     }
     setSending(true);
+    setVoteError(null);
     // Víc možností se ukládá do jednoho hlasu ("a,c"), aby dál platilo
-    // omezení jeden hlas na slide a nešlo hlasovat opakovaně.
-    const { error } = await supabase.from("answers").insert({
-      session_id: session.id,
-      slide_id: slide.id,
-      participant_id: participant.id,
-      answer_id: answerId,
-    });
+    // omezení jeden hlas na slide. Upsert kvůli tomu, že hlas jde změnit —
+    // druhé odeslání přepíše ten původní místo aby narazilo na unikát.
+    const { error } = await supabase.from("answers").upsert(
+      {
+        session_id: session.id,
+        slide_id: slide.id,
+        participant_id: participant.id,
+        answer_id: answerId,
+      },
+      { onConflict: "slide_id,participant_id" },
+    );
     setSending(false);
-    // 23505 = na tenhle slide už hlas poslal (třeba z jiné záložky).
-    if (error && error.code !== "23505") {
+    if (error) {
+      setVoteError("Hlas se nepodařilo odeslat. Zkus to prosím znovu.");
       return;
     }
     setPicked((prev) => ({ ...prev, [slide.id]: answerId }));
+  }
+
+  /** Uvolní slide k novému hlasování — třeba když se účastník uklikl. */
+  function unpick() {
+    if (!slide) {
+      return;
+    }
+    setVoteError(null);
+    setPicks(myAnswer !== undefined ? myAnswer.split(",") : []);
+    setPicked((prev) => {
+      const next = { ...prev };
+      delete next[slide.id];
+      return next;
+    });
   }
 
   async function sendWord() {
@@ -247,7 +300,9 @@ export default function Player({
             "radial-gradient(45rem 30rem at 20% -10%, rgb(220 91 91 / 0.22), transparent 62%), radial-gradient(40rem 28rem at 85% 108%, rgb(125 164 178 / 0.2), transparent 60%)",
         }}
       />
-      <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
+      {/* Obsah je na střed, ale když přeroste obrazovku (šest možností na
+          telefonu), stránka se prostě odroluje místo aby se ořízl. */}
+      <main className="relative z-10 flex flex-1 flex-col justify-center px-4 py-8 sm:px-6 [&>*]:mx-auto">
         {!participant ? (
           <form
             onSubmit={(e) => {
@@ -292,18 +347,16 @@ export default function Player({
             </p>
 
             <div className="mt-6 flex gap-2">
-              {scaleValues(scale).map((value, index) => {
+              {scaleValues(scale).map((value, index, values) => {
                 const id = String(value);
                 const mine = chosen.includes(id);
-                const style =
-                  QUIZ_ANSWER_STYLES[index % QUIZ_ANSWER_STYLES.length];
                 return (
                   <button
                     key={value}
                     type="button"
                     onClick={() => pick(id)}
                     disabled={myAnswer !== undefined || sending}
-                    style={{ background: style.color }}
+                    style={{ background: scaleColor(index, values.length) }}
                     className={`flex-1 rounded-2xl py-5 text-lg font-extrabold text-white transition-all duration-150 ${
                       myAnswer !== undefined && !mine ? "opacity-40" : ""
                     } ${mine ? "ring-4 ring-white" : ""} ${
@@ -326,6 +379,11 @@ export default function Player({
             <p className="mt-5 text-center text-sm text-white/60">
               {myAnswer !== undefined ? "Hlas odeslán." : "Vyber hodnotu."}
             </p>
+            <ChangeVote
+              show={myAnswer !== undefined && !revealed}
+              onChange={unpick}
+              error={voteError}
+            />
           </div>
         ) : qa && slide ? (
           <div key={slide.id} className="animate-fade-in w-full max-w-md">
@@ -479,14 +537,19 @@ export default function Player({
             </div>
 
             {multi && myAnswer === undefined && (
-              <button
-                type="button"
-                onClick={() => pick([...picks].sort().join(","))}
-                disabled={picks.length === 0 || sending}
-                className="mt-4 w-full rounded-full bg-brand px-5 py-3 font-semibold text-white shadow-brand transition-all duration-150 hover:bg-brand-dark disabled:opacity-40 motion-safe:hover:-translate-y-0.5"
-              >
-                Odeslat {picks.length > 0 ? `(${picks.length})` : ""}
-              </button>
+              // Na telefonu s šesti možnostmi je tlačítko pod ohybem, proto
+              // se drží u spodního okraje — jinak to vypadá, že anketa nejde
+              // odeslat.
+              <div className="sticky bottom-2 z-10 mt-4">
+                <button
+                  type="button"
+                  onClick={() => pick([...picks].sort().join(","))}
+                  disabled={picks.length === 0 || sending}
+                  className="w-full rounded-full bg-brand px-5 py-3 font-semibold text-white shadow-brand transition-all duration-150 hover:bg-brand-dark disabled:opacity-40 motion-safe:hover:-translate-y-0.5"
+                >
+                  Odeslat {picks.length > 0 ? `(${picks.length})` : ""}
+                </button>
+              </div>
             )}
 
             <p className="mt-5 text-center text-sm text-white/60">
@@ -506,6 +569,11 @@ export default function Player({
                       ? "Vyber jednu nebo víc možností a odešli."
                       : "Vyber možnost."}
             </p>
+            <ChangeVote
+              show={myAnswer !== undefined && !revealed}
+              onChange={unpick}
+              error={voteError}
+            />
           </div>
         ) : slide ? (
           <div

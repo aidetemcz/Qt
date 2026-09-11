@@ -8,9 +8,9 @@ export interface Presentation {
 export type SlideAlign = "left" | "center" | "right";
 export type SlideVAlign = "top" | "center" | "bottom";
 
-export type SlideElementKind = "heading" | "body";
+export type SlideElementKind = "heading" | "body" | "image";
 
-/** A freely positioned text box on the slide, in the 960×540 base coordinate
+/** A freely positioned box on the slide, in the 960×540 base coordinate
  * system (scaled to whatever size the slide is rendered at). */
 export interface SlideElement {
   id: string;
@@ -24,6 +24,10 @@ export interface SlideElement {
   color?: string;
   bold?: boolean;
   textAlign?: SlideAlign;
+  /** Obrázkový prvek: výška rámu a zdroj. U textu se výška řídí obsahem. */
+  h?: number;
+  src?: string;
+  fit?: SlideImageFit;
 }
 
 export type SlideImageFit = "cover" | "contain";

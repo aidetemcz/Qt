@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { defaultColor } from "@/components/slide/SlideView";
 import type {
   SlideAlign,
@@ -8,10 +8,7 @@ import type {
   SlideElement,
   SlideImageFit,
 } from "@/lib/presentations";
-import { createClient } from "@/lib/supabase/client";
-
-/** Public Storage bucket that holds slide images. */
-const IMAGE_BUCKET = "slide-images";
+import { uploadSlideImage } from "@/lib/uploadImage";
 
 const TEXT_COLORS = [
   "#241d1a",
@@ -101,7 +98,6 @@ function ImageSettings({
   config: SlideConfig;
   onPatchConfig: (patch: Partial<SlideConfig>) => void;
 }) {
-  const supabase = useMemo(() => createClient(), []);
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,28 +109,19 @@ function ImageSettings({
   async function upload(file: File) {
     setError(null);
     setUploading(true);
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from(IMAGE_BUCKET)
-      .upload(path, file, { cacheControl: "3600" });
+    const result = await uploadSlideImage(file);
     setUploading(false);
-    if (uploadError) {
-      setError(
-        `Nahrání se nepovedlo: ${uploadError.message}. Zkontroluj, že existuje veřejný bucket „${IMAGE_BUCKET}".`,
-      );
+    if ("error" in result) {
+      setError(result.error);
       return;
     }
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
-    onPatchConfig({ image: { src: publicUrl, fit } });
+    onPatchConfig({ image: { src: result.url, fit } });
   }
 
   return (
     <div>
       <p className="mb-2 text-xs font-bold tracking-wide text-muted uppercase">
-        Obrázek
+        Obrázek na pozadí
       </p>
 
       {image?.src && (
@@ -248,7 +235,54 @@ export default function SlideSettingsPanel({
 }) {
   return (
     <aside className="flex w-full shrink-0 flex-col gap-5 overflow-y-auto border-t border-border bg-surface p-4 lg:w-72 lg:border-t-0 lg:border-l">
-      {selected ? (
+      {selected?.kind === "image" ? (
+        <>
+          <div>
+            <p className="eyebrow">Obrázek</p>
+            <h2 className="mt-1 text-lg font-extrabold text-ink">
+              Nastavení obrázku
+            </h2>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-bold tracking-wide text-muted uppercase">
+              Výplň rámu
+            </p>
+            <div className="flex gap-1.5">
+              {(["contain", "cover"] as SlideImageFit[]).map((value) => {
+                const active = (selected.fit ?? "contain") === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => onPatchElement({ fit: value })}
+                    aria-pressed={active}
+                    className={`flex-1 rounded-xl border py-2 text-xs font-semibold transition-colors duration-150 ${
+                      active
+                        ? "border-brand bg-brand-50 text-brand"
+                        : "border-border text-muted hover:border-brand/40"
+                    }`}
+                  >
+                    {value === "contain" ? "Vejít se" : "Vyplnit"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <p className="text-xs leading-relaxed text-muted">
+            Obrázkem hýbeš tažením, velikost měníš za pravý dolní roh.
+          </p>
+
+          <button
+            type="button"
+            onClick={onDeleteElement}
+            className="btn btn-secondary btn-sm mt-auto hover:border-red-300 hover:text-danger"
+          >
+            Odebrat obrázek
+          </button>
+        </>
+      ) : selected ? (
         <>
           <div>
             <p className="eyebrow">
@@ -322,7 +356,8 @@ export default function SlideSettingsPanel({
           </div>
 
           <p className="text-xs leading-relaxed text-muted">
-            Velikost změníš tažením za roh vybraného textu.
+            Písmo zvětšíš tažením za pravý dolní roh, šířku rámu (a tím zalomení
+            řádků) za úchyt vpravo.
           </p>
 
           <button
