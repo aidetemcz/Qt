@@ -1,29 +1,15 @@
--- Účastník smí svůj hlas změnit, když se uklikl.
+-- Změna hlasu: řeší ji server, v databázi není potřeba nic povolovat navíc.
 --
 -- Spusť v Supabase SQL editoru. Je to idempotentní (dá se pustit vícekrát).
 --
--- Hlas se ukládá jako jeden řádek na dvojici (slide, účastník). Aby šla volba
--- přepsat, musí projít UPDATE — dosud bylo povolené jen vložení, takže druhé
--- odeslání naráželo na unikátní index. Přepsat jde jen hlas v běžící relaci;
--- po ukončení prezentace jsou výsledky uzavřené.
+-- Historie: dřív tu bylo pravidlo, které účastníkovi dovolovalo svůj hlas
+-- přepsat. Nefungovalo — Postgres u "insert ... on conflict" vyžaduje, aby
+-- role směla tabulku i číst, a to účastník nesmí (jinak by si v prohlížeči
+-- přečetl, kdo jak hlasoval). Důsledek byl, že neprošel žádný hlas.
 --
--- Čtení zůstává jen vlastníkovi prezentace (viz add_answers.sql): publikum se
--- dál nemá jak podívat, kdo jak hlasoval.
-
-alter table public.answers enable row level security;
+-- Nově hlas zapisuje /api/vote servisním klíčem: ověří, že relace běží, že
+-- slide do ní patří a že volba na něm existuje. Pravidlo pro účastníka tedy
+-- zmizí a čtení hlasů zůstává jen vlastníkovi prezentace.
 
 drop policy if exists "answers_update_active" on public.answers;
-create policy "answers_update_active"
-  on public.answers for update
-  using (
-    exists (
-      select 1 from public.sessions s
-      where s.id = answers.session_id and s.is_active
-    )
-  )
-  with check (
-    exists (
-      select 1 from public.sessions s
-      where s.id = answers.session_id and s.is_active
-    )
-  );
+drop policy if exists "answers_select_own" on public.answers;

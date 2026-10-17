@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   deletePresentation,
+  duplicatePresentation,
   renamePresentation,
   startPresentation,
 } from "@/app/dashboard/actions";
@@ -66,9 +67,14 @@ export default function PresentationCard({
 
   function handleDelete() {
     setMenuOpen(false);
-    if (confirm(`Smazat „${presentation.title}"?`)) {
+    if (confirm(`Přesunout „${presentation.title}" do koše?`)) {
       startTransition(() => deletePresentation(presentation.id));
     }
+  }
+
+  function handleDuplicate() {
+    setMenuOpen(false);
+    startTransition(() => duplicatePresentation(presentation.id));
   }
 
   function handlePresent() {
@@ -179,6 +185,15 @@ export default function PresentationCard({
                 <button
                   type="button"
                   role="menuitem"
+                  onClick={handleDuplicate}
+                  disabled={isPending}
+                  className={menuItem}
+                >
+                  Duplikovat
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
                   onClick={() => {
                     setMenuOpen(false);
                     setIsEditing(true);
@@ -194,7 +209,7 @@ export default function PresentationCard({
                   disabled={isPending}
                   className={`${menuItem} hover:bg-red-50 hover:text-danger`}
                 >
-                  Smazat
+                  Do koše
                 </button>
               </div>
             </div>

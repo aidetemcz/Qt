@@ -214,20 +214,27 @@ export default function Player({
     }
     setSending(true);
     setVoteError(null);
-    // Víc možností se ukládá do jednoho hlasu ("a,c"), aby dál platilo
-    // omezení jeden hlas na slide. Upsert kvůli tomu, že hlas jde změnit —
-    // druhé odeslání přepíše ten původní místo aby narazilo na unikát.
-    const { error } = await supabase.from("answers").upsert(
-      {
-        session_id: session.id,
-        slide_id: slide.id,
-        participant_id: participant.id,
-        answer_id: answerId,
-      },
-      { onConflict: "slide_id,participant_id" },
-    );
+    // Hlas jde přes server: změnit volbu znamená přepsat řádek, a to by
+    // v prohlížeči šlo jedině s právem číst cizí hlasy. Server navíc ověří,
+    // že relace běží a že volba na slidu vůbec existuje.
+    let ok = false;
+    try {
+      const response = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sessionId: session.id,
+          slideId: slide.id,
+          participantId: participant.id,
+          answerId,
+        }),
+      });
+      ok = response.ok;
+    } catch {
+      ok = false;
+    }
     setSending(false);
-    if (error) {
+    if (!ok) {
       setVoteError("Hlas se nepodařilo odeslat. Zkus to prosím znovu.");
       return;
     }

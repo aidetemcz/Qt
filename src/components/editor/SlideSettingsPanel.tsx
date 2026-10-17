@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { defaultColor } from "@/components/slide/SlideView";
+import { useBrandKit } from "@/lib/brand";
 import type {
   SlideAlign,
   SlideConfig,
@@ -233,6 +234,11 @@ export default function SlideSettingsPanel({
   onPatchConfig: (patch: Partial<SlideConfig>) => void;
   onDeleteElement: () => void;
 }) {
+  // Barvy značky se nabízejí jako první, ať se nehledají v jiné prezentaci.
+  const brand = useBrandKit();
+  const textColors = [...brand.colors, ...TEXT_COLORS];
+  const backgrounds = [...brand.colors, ...SLIDE_BACKGROUNDS];
+
   return (
     <aside className="flex w-full shrink-0 flex-col gap-5 overflow-y-auto border-t border-border bg-surface p-4 lg:w-72 lg:border-t-0 lg:border-l">
       {selected?.kind === "image" ? (
@@ -295,7 +301,7 @@ export default function SlideSettingsPanel({
 
           <Swatches
             label="Barva textu"
-            colors={TEXT_COLORS}
+            colors={textColors}
             value={selected.color ?? defaultColor(selected.kind)}
             onPick={(color) => onPatchElement({ color })}
           />
@@ -381,7 +387,7 @@ export default function SlideSettingsPanel({
 
           <Swatches
             label="Barva pozadí"
-            colors={SLIDE_BACKGROUNDS}
+            colors={backgrounds}
             value={config.background ?? "#ffffff"}
             onPick={(background) => onPatchConfig({ background })}
           />

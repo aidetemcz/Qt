@@ -19,6 +19,7 @@ import {
   SLIDE_H,
   SLIDE_W,
 } from "@/components/slide/SlideView";
+import { useBrandKit } from "@/lib/brand";
 import type {
   SlideConfig,
   SlideElement,
@@ -80,6 +81,7 @@ export default function SlideEditorCanvas({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const brand = useBrandKit();
 
   const selected = elements.find((el) => el.id === selectedId) ?? null;
 
@@ -284,6 +286,16 @@ export default function SlideEditorCanvas({
           >
             {uploading ? "Nahrávám…" : "+ Přidat obrázek"}
           </button>
+          {brand.logoUrl && (
+            <button
+              type="button"
+              onClick={() => addImage(brand.logoUrl!)}
+              title="Logo z nastavení značky"
+              className="btn btn-secondary btn-sm"
+            >
+              + Logo
+            </button>
+          )}
 
           {selected ? (
             <button
@@ -295,7 +307,8 @@ export default function SlideEditorCanvas({
             </button>
           ) : (
             <span className="ml-auto text-xs text-muted">
-              Klikni pro psaní, tahni pro přesun, za roh pro velikost.
+              Klikni pro psaní. Vybraný prvek má úchyty: nahoře přesun, vpravo
+              šířku, v rohu velikost.
             </span>
           )}
         </div>
@@ -396,8 +409,30 @@ export default function SlideEditorCanvas({
                   </div>
                 )}
 
-                {isSelected && !isEditing && (
+                {/* Úchyty svítí po celou dobu, co je prvek vybraný — i při
+                    psaní. Dřív se při psaní schovávaly, a protože klik rovnou
+                    otevírá text, nešlo se k nim skoro dostat. */}
+                {isSelected && (
                   <>
+                    {/* Při psaní bere klikání textové pole, takže přesun má
+                        vlastní úchyt nad prvkem. */}
+                    <div
+                      onPointerDown={(e) => startInteraction("move", el, e)}
+                      title="Táhni pro přesun"
+                      className="absolute flex cursor-move items-center justify-center rounded-md bg-brand text-white shadow-sm transition-transform duration-150 hover:scale-110"
+                      style={{
+                        left: 0,
+                        // U prvku nahoře u okraje by se úchyt nad ním oříznul,
+                        // tak se schová dovnitř.
+                        top: el.y < 26 ? cqh(2) : cqh(-22),
+                        width: cqw(26),
+                        height: cqh(16),
+                        fontSize: cqw(13),
+                        lineHeight: 1,
+                      }}
+                    >
+                      ✥
+                    </div>
                     {el.kind !== "image" && (
                       <div
                         onPointerDown={(e) => startInteraction("width", el, e)}
