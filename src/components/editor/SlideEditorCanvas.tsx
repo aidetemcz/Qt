@@ -411,7 +411,9 @@ export default function SlideEditorCanvas({
 
                 {/* Úchyty svítí po celou dobu, co je prvek vybraný — i při
                     psaní. Dřív se při psaní schovávaly, a protože klik rovnou
-                    otevírá text, nešlo se k nim skoro dostat. */}
+                    otevírá text, nešlo se k nim skoro dostat. Sedí uvnitř
+                    rámu: venku se u okraje slidu ořízly a po roztažení
+                    doprava už nešly chytit. */}
                 {isSelected && (
                   <>
                     {/* Při psaní bere klikání textové pole, takže přesun má
@@ -434,11 +436,17 @@ export default function SlideEditorCanvas({
                       ✥
                     </div>
                     {el.kind !== "image" && (
+                      // Svislá lišta, ne puntík: u jednořádkového textu by se
+                      // puntík potkal s rohovým úchytem a chytil by se špatný.
                       <div
                         onPointerDown={(e) => startInteraction("width", el, e)}
                         title="Táhni pro šířku textu"
-                        className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-brand bg-surface shadow-sm transition-transform duration-150 hover:scale-125"
-                        style={{ right: cqw(-6) }}
+                        className="absolute w-2 cursor-ew-resize rounded-full border border-brand bg-surface/90 shadow-sm"
+                        style={{
+                          right: 0,
+                          top: cqh(2),
+                          bottom: cqh(20),
+                        }}
                       />
                     )}
                     <div
@@ -449,7 +457,7 @@ export default function SlideEditorCanvas({
                           : "Táhni pro velikost písma"
                       }
                       className="absolute h-3.5 w-3.5 cursor-nwse-resize rounded-full border-2 border-brand bg-surface shadow-sm transition-transform duration-150 hover:scale-125"
-                      style={{ right: cqw(-6), bottom: cqh(-6) }}
+                      style={{ right: 0, bottom: cqh(1) }}
                     />
                   </>
                 )}
