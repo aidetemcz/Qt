@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import NewPresentationButton from "@/components/NewPresentationButton";
 import PresentationCard from "@/components/PresentationCard";
@@ -59,6 +60,12 @@ export default function DashboardContent({
             className="rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-muted shadow-sm transition-all duration-150 hover:border-brand/40 hover:text-brand disabled:opacity-50 motion-safe:hover:-translate-y-0.5"
           />
         ))}
+        <Link
+          href="/templates"
+          className="rounded-full border border-brand/40 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand shadow-sm transition-all duration-150 hover:border-brand motion-safe:hover:-translate-y-0.5"
+        >
+          Ze šablony →
+        </Link>
       </div>
 
       <div className="mt-12 flex flex-wrap items-center justify-between gap-4">

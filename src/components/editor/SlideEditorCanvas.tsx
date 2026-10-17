@@ -19,6 +19,7 @@ import {
   SLIDE_H,
   SLIDE_W,
 } from "@/components/slide/SlideView";
+import { useBrandKit } from "@/lib/brand";
 import type {
   SlideConfig,
   SlideElement,
@@ -31,19 +32,6 @@ const clamp = (v: number, min: number, max: number) =>
 
 /** Nejužší rám, pod který se prvek tažením nesmrskne. */
 const MIN_W = 60;
-
-/**
- * Doladí výšku pole podle obsahu. Bez toho zůstane pole vysoké na jeden
- * řádek, a po Enteru se dřív napsaný text schová nad horní okraj — vypadá
- * to, že zmizel.
- */
-function autoGrow(field: HTMLTextAreaElement | null) {
-  if (!field) {
-    return;
-  }
-  field.style.height = "auto";
-  field.style.height = `${field.scrollHeight}px`;
-}
 
 function newId(): string {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -80,6 +68,7 @@ export default function SlideEditorCanvas({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const brand = useBrandKit();
 
   const selected = elements.find((el) => el.id === selectedId) ?? null;
 
@@ -284,6 +273,16 @@ export default function SlideEditorCanvas({
           >
             {uploading ? "Nahrávám…" : "+ Přidat obrázek"}
           </button>
+          {brand.logoUrl && (
+            <button
+              type="button"
+              onClick={() => addImage(brand.logoUrl!)}
+              title="Logo z nastavení značky"
+              className="btn btn-secondary btn-sm"
+            >
+              + Logo
+            </button>
+          )}
 
           {selected ? (
             <button
@@ -295,7 +294,8 @@ export default function SlideEditorCanvas({
             </button>
           ) : (
             <span className="ml-auto text-xs text-muted">
-              Klikni pro psaní, tahni pro přesun, za roh pro velikost.
+              Klikni pro psaní. Vybraný prvek má úchyty: nahoře přesun, vpravo
+              šířku, v rohu velikost.
             </span>
           )}
         </div>
@@ -344,7 +344,11 @@ export default function SlideEditorCanvas({
             return (
               <div
                 key={el.id}
-                className={`absolute ${isSelected ? "outline-2 outline-offset-2 outline-brand rounded-sm" : ""}`}
+                // Rám sám klikání nebere — jinak by jeho prázdná část
+                // překrývala prvky pod sebou a nešlo je chytit. Reaguje jen
+                // samotný text, obrázek a úchyty. Vybraný prvek jde dopředu,
+                // ať jsou jeho úchyty nad ostatními.
+                className={`pointer-events-none absolute ${isSelected ? "outline-2 outline-offset-2 outline-brand rounded-sm" : ""}`}
                 style={{
                   left: cqw(el.x),
                   top: cqh(el.y),
@@ -352,13 +356,14 @@ export default function SlideEditorCanvas({
                   height:
                     el.kind === "image" ? cqh(elementHeight(el)) : undefined,
                   fontSize: cqw(el.fontSize),
+                  zIndex: isSelected ? 2 : 1,
                   ...elementStyle(el),
                 }}
               >
                 {el.kind === "image" ? (
                   <div
                     onPointerDown={(e) => startInteraction("move", el, e)}
-                    className="h-full w-full cursor-move"
+                    className="pointer-events-auto h-full w-full cursor-move"
                   >
                     {el.src ? (
                       // eslint-disable-next-line @next/next/no-img-element -- arbitrary user URLs
@@ -372,38 +377,83 @@ export default function SlideEditorCanvas({
                     ) : null}
                   </div>
                 ) : isEditing ? (
-                  <textarea
-                    autoFocus
-                    ref={autoGrow}
-                    value={el.text}
-                    maxLength={el.kind === "heading" ? HEADING_MAX : BODY_MAX}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                      autoGrow(e.currentTarget);
-                      patchElement(el.id, { text: e.target.value });
-                    }}
-                    onBlur={() => setEditingId(null)}
-                    rows={1}
-                    className={`block w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-[color:inherit] outline-none [font-size:inherit] [font-weight:inherit] [text-align:inherit] ${elementClass(el.kind)}`}
-                  />
+                  // Pole leží přes neviditelnou kopii textu, která mu drží
+                  // výšku. Dopočítávat ji v JS znamenalo měřit dřív, než se
+                  // dopočítá velikost písma ze slidu — pole pak zůstalo
+                  // nízké a text v něm vypadal, že se neaktualizuje, dokud
+                  // se od něj neodkliklo.
+                  <div className="pointer-events-auto grid">
+                    <span
+                      aria-hidden
+                      className={`invisible col-start-1 row-start-1 whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
+                    >
+                      {`${el.text}​`}
+                    </span>
+                    <textarea
+                      autoFocus
+                      value={el.text}
+                      maxLength={el.kind === "heading" ? HEADING_MAX : BODY_MAX}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) =>
+                        patchElement(el.id, { text: e.target.value })
+                      }
+                      onBlur={() => setEditingId(null)}
+                      className={`col-start-1 row-start-1 block w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-[color:inherit] outline-none [font-family:inherit] [font-size:inherit] [font-weight:inherit] [text-align:inherit] ${elementClass(el.kind)}`}
+                    />
+                  </div>
                 ) : (
                   <div
-                    onPointerDown={(e) => startInteraction("move", el, e)}
-                    className={`cursor-text whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
+                    className={`whitespace-pre-wrap break-words ${elementClass(el.kind)}`}
                   >
-                    {el.text ||
-                      (el.kind === "heading" ? "Nadpis" : "Hlavní text")}
+                    {/* Klikání bere jen samotný text, ne celá šířka rámu. */}
+                    <span
+                      onPointerDown={(e) => startInteraction("move", el, e)}
+                      className="pointer-events-auto cursor-text"
+                    >
+                      {el.text ||
+                        (el.kind === "heading" ? "Nadpis" : "Hlavní text")}
+                    </span>
                   </div>
                 )}
 
-                {isSelected && !isEditing && (
+                {/* Úchyty svítí po celou dobu, co je prvek vybraný — i při
+                    psaní. Dřív se při psaní schovávaly, a protože klik rovnou
+                    otevírá text, nešlo se k nim skoro dostat. Sedí uvnitř
+                    rámu: venku se u okraje slidu ořízly a po roztažení
+                    doprava už nešly chytit. */}
+                {isSelected && (
                   <>
+                    {/* Při psaní bere klikání textové pole, takže přesun má
+                        vlastní úchyt nad prvkem. */}
+                    <div
+                      onPointerDown={(e) => startInteraction("move", el, e)}
+                      title="Táhni pro přesun"
+                      className="pointer-events-auto absolute flex cursor-move items-center justify-center rounded-md bg-brand text-white shadow-sm transition-transform duration-150 hover:scale-110"
+                      style={{
+                        left: 0,
+                        // U prvku nahoře u okraje by se úchyt nad ním oříznul,
+                        // tak se schová dovnitř.
+                        top: el.y < 26 ? cqh(2) : cqh(-22),
+                        width: cqw(26),
+                        height: cqh(16),
+                        fontSize: cqw(13),
+                        lineHeight: 1,
+                      }}
+                    >
+                      ✥
+                    </div>
                     {el.kind !== "image" && (
+                      // Svislá lišta, ne puntík: u jednořádkového textu by se
+                      // puntík potkal s rohovým úchytem a chytil by se špatný.
                       <div
                         onPointerDown={(e) => startInteraction("width", el, e)}
                         title="Táhni pro šířku textu"
-                        className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-brand bg-surface shadow-sm transition-transform duration-150 hover:scale-125"
-                        style={{ right: cqw(-6) }}
+                        className="pointer-events-auto absolute w-2 cursor-ew-resize rounded-full border border-brand bg-surface/90 shadow-sm"
+                        style={{
+                          right: 0,
+                          top: cqh(2),
+                          bottom: cqh(20),
+                        }}
                       />
                     )}
                     <div
@@ -413,8 +463,8 @@ export default function SlideEditorCanvas({
                           ? "Táhni pro velikost obrázku"
                           : "Táhni pro velikost písma"
                       }
-                      className="absolute h-3.5 w-3.5 cursor-nwse-resize rounded-full border-2 border-brand bg-surface shadow-sm transition-transform duration-150 hover:scale-125"
-                      style={{ right: cqw(-6), bottom: cqh(-6) }}
+                      className="pointer-events-auto absolute h-3.5 w-3.5 cursor-nwse-resize rounded-full border-2 border-brand bg-surface shadow-sm transition-transform duration-150 hover:scale-125"
+                      style={{ right: 0, bottom: cqh(1) }}
                     />
                   </>
                 )}

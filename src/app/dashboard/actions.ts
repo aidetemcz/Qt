@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { slideTypeById } from "@/lib/slideTypes";
+import { templateById } from "@/lib/templates";
 import { createClient } from "@/lib/supabase/server";
 
 /** Random 6-digit numeric join code, e.g. "042317" (leading zeros allowed). */
@@ -98,9 +99,125 @@ export async function renamePresentation(id: string, title: string) {
 
 export async function deletePresentation(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("presentations").delete().eq("id", id);
+  // Do koše, ne nadobro — se smazanou prezentací by zmizely i její relace
+  // a výsledky. Nasbíranou zpětnou vazbu nemá smazat jeden omylem trefený
+  // řádek v nabídce.
+  const { error } = await supabase
+    .from("presentations")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
   if (error) {
-    throw new Error(`Failed to delete presentation: ${error.message}`);
+    throw new Error(`Prezentaci se nepodařilo smazat: ${error.message}`);
   }
   revalidatePath("/dashboard");
+  revalidatePath("/trash");
+}
+
+/** Vrátí prezentaci z koše zpátky mezi ostatní. */
+export async function restorePresentation(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("presentations")
+    .update({ deleted_at: null })
+    .eq("id", id);
+  if (error) {
+    throw new Error(`Prezentaci se nepodařilo vrátit: ${error.message}`);
+  }
+  revalidatePath("/dashboard");
+  revalidatePath("/trash");
+}
+
+/** Nadobro — i s relacemi a výsledky, které na ní visí. */
+export async function purgePresentation(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("presentations").delete().eq("id", id);
+  if (error) {
+    throw new Error(`Prezentaci se nepodařilo smazat: ${error.message}`);
+  }
+  revalidatePath("/trash");
+}
+
+/**
+ * Kopie prezentace i se slidy. Před školením se stejná prezentace jede
+ * znovu, jen s jiným publikem — a výsledky z minula ať zůstanou u originálu.
+ */
+export async function duplicatePresentation(id: string) {
+  const supabase = await createClient();
+
+  const [{ data: original }, { data: slides }] = await Promise.all([
+    supabase
+      .from("presentations")
+      .select("title")
+      .eq("id", id)
+      .maybeSingle<{ title: string }>(),
+    supabase
+      .from("slides")
+      .select("position, type, config")
+      .eq("presentation_id", id)
+      .order("position", { ascending: true })
+      .returns<{ position: number; type: string; config: unknown }[]>(),
+  ]);
+
+  if (!original) {
+    throw new Error("Prezentace nenalezena.");
+  }
+
+  const { data: copy, error } = await supabase
+    .from("presentations")
+    .insert({ title: `${original.title} (kopie)` })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !copy) {
+    throw new Error(`Kopii se nepodařilo založit: ${error?.message}`);
+  }
+
+  if (slides && slides.length > 0) {
+    const { error: slideError } = await supabase.from("slides").insert(
+      slides.map((slide) => ({
+        presentation_id: copy.id,
+        position: slide.position,
+        type: slide.type,
+        config: slide.config,
+      })),
+    );
+    if (slideError) {
+      throw new Error(`Slidy se nepodařilo zkopírovat: ${slideError.message}`);
+    }
+  }
+
+  revalidatePath("/dashboard");
+  redirect(`/editor/${copy.id}`);
+}
+
+/** Založí prezentaci z hotové šablony a otevře ji v editoru. */
+export async function createFromTemplate(templateId: string) {
+  const template = templateById(templateId);
+  if (!template) {
+    throw new Error("Neznámá šablona.");
+  }
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("presentations")
+    .insert({ title: template.title })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !data) {
+    throw new Error(`Prezentaci se nepodařilo založit: ${error?.message}`);
+  }
+
+  const { error: slideError } = await supabase.from("slides").insert(
+    template.slides.map((slide, index) => ({
+      presentation_id: data.id,
+      position: index + 1,
+      type: slide.type,
+      config: slide.config,
+    })),
+  );
+  if (slideError) {
+    throw new Error(`Slidy se nepodařilo založit: ${slideError.message}`);
+  }
+
+  revalidatePath("/dashboard");
+  redirect(`/editor/${data.id}`);
 }

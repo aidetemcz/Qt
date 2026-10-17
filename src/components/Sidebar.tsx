@@ -2,7 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import NewPresentationButton from "@/components/NewPresentationButton";
 
-const disabledItems = ["Šablony", "Značka", "Koš"];
+/** Zbytek navigace; Domů a Prezentace stojí výš a mají vlastní vzhled. */
+const links = [
+  { href: "/templates", label: "Šablony" },
+  { href: "/brand", label: "Značka" },
+  { href: "/trash", label: "Koš" },
+  { href: "/profile", label: "Profil" },
+];
 
 export default function Sidebar() {
   return (
@@ -29,22 +35,14 @@ export default function Sidebar() {
       >
         Prezentace
       </Link>
-      <Link
-        href="/profile"
-        className="rounded-xl px-3 py-2 text-sm font-medium text-muted transition-colors duration-150 hover:bg-brand-50 hover:text-brand"
-      >
-        Profil
-      </Link>
-      {disabledItems.map((item) => (
-        <button
-          key={item}
-          type="button"
-          disabled
-          title="Připravujeme"
-          className="hidden cursor-not-allowed rounded-xl px-3 py-2 text-left text-sm font-medium text-neutral-400 md:block"
+      {links.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="rounded-xl px-3 py-2 text-sm font-medium text-muted transition-colors duration-150 hover:bg-brand-50 hover:text-brand"
         >
-          {item}
-        </button>
+          {link.label}
+        </Link>
       ))}
     </aside>
   );

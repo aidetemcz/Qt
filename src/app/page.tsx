@@ -31,9 +31,15 @@ export default async function HomePage() {
               priority
             />
           </Link>
-          {/* Zatím to nikam nevede, tak je to i vidět — ne jen v bublině. */}
+          {/* Šablony už existují; zbytek je zatím vidět jako "brzy". */}
           <nav className="hidden items-center gap-1 sm:flex">
-            {["Šablony", "Funkce", "Ceník"].map((item) => (
+            <Link
+              href="/templates"
+              className="px-3 py-2 text-sm font-medium text-muted transition-colors duration-150 hover:text-brand"
+            >
+              Šablony
+            </Link>
+            {["Funkce", "Ceník"].map((item) => (
               <span
                 key={item}
                 className="flex cursor-default items-center gap-1.5 px-3 py-2 text-sm font-medium text-neutral-400"
@@ -67,8 +73,8 @@ export default async function HomePage() {
           Co dnes budeš <span className="marker">prezentovat</span>?
         </h1>
         <p className="animate-slide-up mt-7 max-w-xl text-lg leading-relaxed text-muted">
-          Qt dělá z prezentací něco, do čeho publikum mluví — kvízy, ankety a
-          otázky na jednom místě.
+          Prezentace, do které publikum odpovídá z mobilu. Kvízy, ankety, škály,
+          word cloud i otázky — a výsledky máš hned po skončení.
         </p>
         <div className="animate-slide-up mt-10 flex flex-wrap items-center justify-center gap-3">
           <Link href="/dashboard" className="btn btn-primary btn-lg">

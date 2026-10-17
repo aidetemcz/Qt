@@ -10,19 +10,35 @@ export const metadata = {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const select = "id, title, created_at, updated_at, slides(count)";
+  type Row = Presentation & { slides: { count: number }[] };
+
   const [
     {
       data: { user },
     },
-    { data: presentations, error },
+    listed,
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase
       .from("presentations")
-      .select("id, title, created_at, updated_at, slides(count)")
+      .select(select)
+      // Co je v koši, se tu neukazuje — má vlastní stránku.
+      .is("deleted_at", null)
       .order("updated_at", { ascending: false })
-      .returns<(Presentation & { slides: { count: number }[] })[]>(),
+      .returns<Row[]>(),
   ]);
+
+  // Dokud neproběhne migrace koše, sloupec chybí a dotaz spadne. Prezentace
+  // se kvůli tomu nemají přestat ukazovat, tak se načtou bez filtru.
+  const { data: presentations, error } = listed.error
+    ? await supabase
+        .from("presentations")
+        .select(select)
+        .order("updated_at", { ascending: false })
+        .returns<Row[]>()
+    : listed;
+
   // Jméno i odhlášení má profil; tady stačí iniciála jako vstup do něj.
   const displayName =
     (user?.user_metadata?.name as string | undefined) || user?.email || "";
